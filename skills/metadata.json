@@ -1,0 +1,49 @@
+{
+  "skills": [
+    {
+      "name": "device_qa_workflow",
+      "type": "workflow",
+      "description": "This is the highest-priority orchestration skill. When you receive a user question about NI hardware devices, you MUST load and follow this workflow before doing anything else."
+    },
+    {
+      "name": "dcpower_user_manual",
+      "type": "doc",
+      "subtype": "user_manual",
+      "device": "dcpower",
+      "category": "dcpower",
+      "description": "NI-DCPower category-level User Manual — covers common concepts, programming, and usage for ALL dcpower-category devices (PXIe-4135, PXIe-4147, PXIe-4163, etc.)."
+    },
+    {
+      "name": "pxie_4163_user_manual",
+      "type": "doc",
+      "subtype": "user_manual",
+      "device": "pxie_4163",
+      "category": "dcpower",
+      "description": "PXIe-4163 device-specific User Manual — official documentation."
+    },
+    {
+      "name": "pxie_4163_specifications",
+      "type": "doc",
+      "subtype": "specifications",
+      "device": "pxie_4163",
+      "category": "dcpower",
+      "description": "PXIe-4163 device-specific Specifications — official documentation."
+    },
+    {
+      "name": "pxie_4135_specifications",
+      "type": "doc",
+      "subtype": "specifications",
+      "device": "pxie_4135",
+      "category": "dcpower",
+      "description": "PXIe-4135 device-specific Specifications — official documentation."
+    },
+    {
+      "name": "pxie_4135_user_manual",
+      "type": "doc",
+      "subtype": "user_manual",
+      "device": "pxie_4135",
+      "category": "dcpower",
+      "description": "PXIe-4135 device-specific User Manual — official documentation."
+    }
+  ]
+}
