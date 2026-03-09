@@ -1,7 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Send, Loader2 } from "lucide-react";
-import { sendChat, type Message } from "../api";
+import { sendChatStream, type Message } from "../api";
 import ChatMessage from "./ChatMessage";
+
+/** Minimum interval (ms) between React state flushes for streaming tokens. */
+const TOKEN_FLUSH_INTERVAL = 50;
 
 interface Props {
   messages: Message[];
@@ -12,13 +15,38 @@ interface Props {
 export default function ChatPanel({ messages, onMessagesChange, modelId }: Props) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [streamingContent, setStreamingContent] = useState("");
+  const [statusText, setStatusText] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-scroll to bottom when messages change
+  // Ref that tracks whether the component is still mounted.
+  const mountedRef = useRef(true);
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+
+  // Abort controller ref so we can cancel the stream on unmount.
+  const abortRef = useRef<AbortController | null>(null);
+  useEffect(() => {
+    return () => { abortRef.current?.abort(); };
+  }, []);
+
+  // Throttled scroll: prevents excessive scrollIntoView calls
+  const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scheduleScroll = useCallback(() => {
+    if (scrollTimerRef.current) return;
+    scrollTimerRef.current = setTimeout(() => {
+      scrollTimerRef.current = null;
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 80);
+  }, []);
+
+  // Auto-scroll to bottom when messages change or streaming content updates
+  useEffect(() => {
+    scheduleScroll();
+  }, [messages, streamingContent, scheduleScroll]);
 
   // Auto-resize textarea
   function handleInputChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
@@ -40,11 +68,52 @@ export default function ChatPanel({ messages, onMessagesChange, modelId }: Props
       textareaRef.current.style.height = "auto";
     }
     setLoading(true);
+    setStreamingContent("");
+    setStatusText("");
+
+    // Create an AbortController so we can cancel on unmount
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    // Token buffer – accumulates tokens and flushes to state on a timer
+    // so we don't trigger a React re-render on every single token.
+    let tokenBuffer = "";
+    let flushTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const flushTokens = () => {
+      flushTimer = null;
+      if (!mountedRef.current) return;
+      const pending = tokenBuffer;
+      tokenBuffer = "";
+      if (pending) {
+        setStreamingContent((prev) => prev + pending);
+      }
+    };
+
+    const onToken = (token: string) => {
+      tokenBuffer += token;
+      if (!flushTimer) {
+        flushTimer = setTimeout(flushTokens, TOKEN_FLUSH_INTERVAL);
+      }
+    };
 
     try {
-      const result = await sendChat(nextMessages, modelId);
+      const result = await sendChatStream(
+        nextMessages,
+        modelId,
+        onToken,
+        (status) => { if (mountedRef.current) setStatusText(status); },
+        controller.signal,
+      );
+      // Flush any remaining buffered tokens before finalising
+      if (flushTimer) { clearTimeout(flushTimer); flushTimer = null; }
+      if (!mountedRef.current) return;
       onMessagesChange(result.messages);
     } catch (err: unknown) {
+      if (flushTimer) { clearTimeout(flushTimer); flushTimer = null; }
+      if (!mountedRef.current) return;
+      // Ignore abort errors (component unmounted)
+      if (err instanceof DOMException && err.name === "AbortError") return;
       const errMsg =
         err instanceof Error
           ? err.message
@@ -54,7 +123,13 @@ export default function ChatPanel({ messages, onMessagesChange, modelId }: Props
         { role: "assistant", content: `Error: ${errMsg}` },
       ]);
     } finally {
-      setLoading(false);
+      if (flushTimer) { clearTimeout(flushTimer); flushTimer = null; }
+      abortRef.current = null;
+      if (mountedRef.current) {
+        setLoading(false);
+        setStreamingContent("");
+        setStatusText("");
+      }
     }
   }
 
@@ -80,9 +155,13 @@ export default function ChatPanel({ messages, onMessagesChange, modelId }: Props
         {messages.map((msg, i) => (
           <ChatMessage key={i} message={msg} />
         ))}
-        {loading && (
+        {loading && streamingContent && (
+          <ChatMessage message={{ role: "assistant", content: streamingContent }} />
+        )}
+        {loading && !streamingContent && (
           <div className="flex items-center gap-2 text-gray-500 text-sm">
             <Loader2 size={16} className="animate-spin" />
+            {statusText && <span>{statusText}</span>}
           </div>
         )}
         <div ref={bottomRef} />

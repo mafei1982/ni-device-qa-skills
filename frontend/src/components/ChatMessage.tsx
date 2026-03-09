@@ -1,6 +1,23 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Message } from "../api";
+import type { Components } from "react-markdown";
+
+const BACKEND_URL = `http://${window.location.hostname}:8000`;
+
+/**
+ * Custom renderer that rewrites relative `images/…` src values to
+ * point at the backend static-files route.
+ */
+const markdownComponents: Components = {
+  img: ({ src, alt, ...rest }) => {
+    const resolved =
+      src && !src.startsWith("http") && src.startsWith("images/")
+        ? `${BACKEND_URL}/${src}`
+        : src;
+    return <img src={resolved} alt={alt ?? ""} className="max-w-full rounded" {...rest} />;
+  },
+};
 
 interface Props {
   message: Message;
@@ -38,7 +55,7 @@ export default function ChatMessage({ message }: Props) {
 
   return (
     <div className="self-start bg-gray-100 text-gray-900 rounded-[16px_16px_16px_4px] px-4 py-2 max-w-[80%] prose prose-sm max-w-none">
-      <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+      <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{content}</ReactMarkdown>
     </div>
   );
 }

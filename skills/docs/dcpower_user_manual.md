@@ -1,8 +1,22 @@
-# NI-DCPower
+# NI-DCPower User Manual
 
-# User Manual
+The NI-DCPower User Manual provides detailed descriptions of the productfunctionality and the step by step processes for use.
 
-### NI-DCPower 2025 Q2 New Features and Changes
+# NI-DCPower New Features and Chang es Changes
+
+Learn about updates, including new features and behavior changes, introduced ineach version of NI-DCPower.
+
+Discover what is new in the latest releases of NI-DCPower.
+
+Note If you cannot find new features and changes for your version, it mightnot include user-facing updates. However, your version might include non-visible changes such as bug fixes and compatibility updates. For informationabout non-visible changes, refer to your product Release Notes.
+
+# Related information:
+
+• Software and Driver Downloads
+
+NI-DCPower Release Notes
+
+# NI-DCPower 2025 Q2 New Features and Changes
 
 • Support for Constant Resistance and Constant Power operation modes added.
 
@@ -10,8 +24,15 @@
 
 • Prevent overshoot at low current when using the DC Current output function withthe PXIe-4051 by updating the Normal presets of the PXIe-4051 current customtransient response properties.
 
+# Related concepts:
 
-### NI-DCPower 2025 Q1 New Features and Changes
+Constant Resistance and Constant Power
+
+# Related information:
+
+• Output Shorted
+
+# NI-DCPower 2025 Q1 New Features and Changes
 
 • Support for INHIBIT pin added to the following modules:
 
@@ -21,23 +42,29 @@
 
 ◦ PXIe-4151
 
-### Updates and Changes for NI-DCPowerExtended Support Versions
+# Updates and Changes for NI-DCPowerExtended Support Versions
 
 Browse updates and changes made in NI-DCPower versions on extended support.
 
 Note If you cannot find changes for your version, it might be a more recentversion, documented as a new feature. Or, your version might not haveincluded user-facing updates. You can find more information about non-visible changes, such as bug fixes, compatibility updates, and stabilityadjustments or maintenance adjustments, in the product Release Notes,available on ni.com.
 
-### NI-DCPower 2024 Q3 New Features and Changes
+# NI-DCPower 2024 Q3 New Features and Changes
 
 • Support for PXIe-4162/4163 Merged Channels
 
 • Support for PXIe-4150
 
-### NI-DCPower 2024 Q1 New Features and Changes
+# Related information:
+
+PXIe-4162 Merged Channels
+
+PXIe-4163 Merged Channels
+
+# NI-DCPower 2024 Q1 New Features and Changes
 
 • Added Accessory Detection support for ACC-4162-3 and ACC-4163-3
 
-### NI-DCPower 2023 Q4 New Features and Changes
+# NI-DCPower 2023 Q4 New Features and Changes
 
 • Support for OpenSUSE 15.5
 
@@ -57,13 +84,13 @@ Note If you cannot find changes for your version, it might be a more recentversi
 
 • Accessory Detection support for ACC-4162-1 and ACC-4163-1
 
-### NI-DCPower 2023 Q3 New Features and Changes
+# NI-DCPower 2023 Q3 New Features and Changes
 
 • Support for PXIe-4162 Asymmetrical Compliance Limit
 
 • Support for PXIe-4162 Measurement Autorange
 
-### NI-DCPower 2023 Q2 New Features and Changes
+# NI-DCPower 2023 Q2 New Features and Changes
 
 • LCR Source Aperture Time attribute for PXIe-4190
 
@@ -71,7 +98,7 @@ Note If you cannot find changes for your version, it might be a more recentversi
 
 • Detection of unbalanced conditions on PXIe-4190
 
-### NI-DCPower 2023 Q1 New Features and Changes
+# NI-DCPower 2023 Q1 New Features and Changes
 
 • Support for PXIe-4163 Remote Sense Over Voltage Protection (OVP)
 
@@ -83,28 +110,28 @@ Note If you cannot find changes for your version, it might be a more recentversi
 
 • Support for PXIe-4190 SMU Measurement Autorange
 
-### NI-DCPower Overview
+# NI-DCPower Overview
 
 The NI-DCPower instrument driver supports NI power supplies, source measure units(SMUs), and electronic loads (E-loads). This User Manual provides detaileddescriptions of the driver functionality.
 
 
 Note This User Manual refers to power supplies, SMUs, and E-loadsinclusively as instruments. If information pertains only to a specificinstrument, the User Manual refers to the instrument type.
 
-### NI-DCPower Examples
+# NI-DCPower Examples
 
 NI installs example code with your software or driver that demonstrates thefunctionality of NI-DCPower. Use these examples to learn about the product oraccelerate your own application development.
 
 Most NI products install examples that you can access directly or from within NIsoftware. The example experience can differ slightly across products and versions.
 
-### Installed Example Locations
+# Installed Example Locations
 
 <table><tr><td colspan="2">Option</td><td>Installed Example Locations</td></tr><tr><td colspan="2">LabVIEW</td><td>\examples\instr\nidcpower, where &lt;LabVIEW&gt; is the LabVIEW directory for the specific LabVIEW version you installed on your system.</td></tr><tr><td colspan="2">LabWindows/CVI</td><td>Users\Public\Documents\National Instruments\CVI\samples\niDCPower</td></tr><tr><td rowspan="2">.NET</td><td>4.0</td><td>Users\Public\Documents\National Instruments\NI-DCPower\Examples\DotNET 4.0</td></tr><tr><td>4.5</td><td>Users\Public\Documents\National Instruments\NI-DCPower\Examples\DotNET 4.5</td></tr></table>
 
-### Common NI-DCPower Examples
+# Common NI-DCPower Examples
 
 <table><tr><td>NI-DCPower Example</td><td>Description</td></tr><tr><td>NI-DCPower Source DC Voltage</td><td>Demonstrates how to force an output voltage.</td></tr><tr><td>NI-DCPower Source DC Current</td><td>Demonstrates how to force an output current.</td></tr><tr><td>NI-DCPower Hardware-Timed Voltage Sweep</td><td>Demonstrates how to sweep the voltage on a single channel and display the results in a graph.</td></tr><tr><td>NI-DCPower Measure Record</td><td>Demonstrates how to take multiple measurements in succession.</td></tr><tr><td>NI-DCPower Measure Step Response</td><td>Demonstrates how to measure the output while it is changing.</td></tr></table>
 
-### Browsing and Se owsing and Searching f ching for Examples in NIamples in NIExample Finder
+# Browsing and Se owsing and Searching f ching for Examples in NIamples in NIExample Finder
 
 Use NI Example Finder to browse and to search for examples.
 
@@ -139,6 +166,7 @@ NI Example Finder updates with all the examples for LabWindows/CVI.
 <table><tr><td>Option</td><td>Description</td></tr><tr><td>Click the Browse tab.</td><td>Choose Browse when you want to drill down through folders to find examples organized by task category.</td></tr><tr><td></td><td>Tip Examples installed with NI drivers or third-party drivers are often found within the Hardware Input and Output folder. Examples installed with toolkits or modules are often found within the Toolkits and Modules folder.</td></tr><tr><td>Click the Search tab.</td><td>Choose Search when you want to find examples by searching for topics, products, or modules relevant to your application.</td></tr></table>
 
 5. To open an example, double-click the folder or the example.
+
 
 Tip You can modify an example VI to fit your application. You can alsocopy and paste from one or more examples into a VI that you create.
 
@@ -238,6 +266,7 @@ NI-DCPower automatically acquires measurements when you configure the followingf
 
 NI-DCPower automatically acquires the measurements by coercing the NI-DCPowerMeasure When property to Automatically After Source Complete. NI-DCPower returns the measurement values in an array.
 
+
 Tip If you want the measure unit to operate independently of the source unitin this context, set the NI-DCPower Measure When property to a value otherthan Automatically After Source Complete.
 
 # Closing the Session
@@ -246,6 +275,7 @@ To close a session, use NI-DCPower Close.
 
 Closing a session is essential for freeing resources, including deallocating memory,destroying threads, and freeing operating system resources. Ensure that you closeevery session that you initialize, even if an error occurs during the program. Whendebugging your application, it is common to abort execution before you close.
 
+
 Note Aborting the execution is not likely to cause problems, but NI does notrecommend doing so.
 
 The channels continue to operate in their last configured state when you close asession. If you close a session while the output channels are enabled and activelysourcing or sinking power, the channels continue to source or sink power until youdisable or reset them.
@@ -253,6 +283,7 @@ The channels continue to operate in their last configured state when you close a
 # Configuring Channels
 
 Channels have two basic source modes: Single point and sequence. The sequencesource mode encompasses both simple sequences and advanced sequences. In eachof these modes, you can output constant or pulsed voltage or current.
+
 
 # Note
 
@@ -353,24 +384,9 @@ Each channel in a session can move through these states independent of one anoth
 
 Figure 1. NI-DCPower Programming States
 
-```mermaid
-stateDiagram-v2
-    [*] --> Uncommitted: Init with Independent Channels
 
-    Uncommitted --> Uncommitted: Set/Get Attribute\nSet Sequence
-    Uncommitted --> Committed: Commit
-    Uncommitted --> Running: Initiate
-    Uncommitted --> [*]: Close
+![](images/1c7b9f7b0c9a99d1d13a5b8fd11f1081c7bb6201d87be893006d24dbd12e9119.jpg)
 
-    Committed --> Committed: Get Attribute/Commit
-    Committed --> Uncommitted: Set Attribute, Set Sequence / Abort
-    Committed --> Running: Initiate
-    Committed --> [*]: Close
-
-    Running --> Running: Set Dynamic Attribute
-    Running --> Uncommitted: Abort
-    Running --> [*]: Close
-```
 
 Note Sessions created using the Initialize With Independent Channelsfunction have different capabilities from those created using prior NI-DCPower initialize functions.
 
@@ -471,7 +487,6 @@ To place channels in the Running state, call NI-DCPower Initiate With Channels. 
 
 measurements.
 
-
 Note If you open a session with the NI-DCPower Initialize with IndependentChannels, the outputs for the channels you specify with NI-DCPower InitiateWith Channels to transition to the Running state are enabled, unless youexplicitly disable the outputs of any channel(s) before initiating.
 
 In the Running state, the channel configuration determines the behavior of thechannel. For example, a channel can either configure a single output point or stepthrough a sequence of points. Additionally, a channel can be configured to wait fortriggers before performing an operation.
@@ -496,6 +511,7 @@ In the Running state, there are several functions that you can use to takemeasur
 • NI-DCPower Query Output State
 
 • NI-DCPower Wait For Event With Channels
+
 
 Tip Call the NI-DCPower Abort With Channels function to transition from theRunning state to the Uncommitted state. If Running in Sequence sourcemode, aborting cancels a sequence even if it has not yet run to completion.
 
@@ -523,6 +539,7 @@ channel name or a fully qualified channel range to unambiguously identify andcon
 
 • Fully qualified channel range—An instrument name plus a channel range.Example: PXI1Slot3/0-23 or PXI1Slot3/0:23
 
+
 Note If the session includes channels from a single physical instrument, youcan use unqualified channel names (for example, 0-23 or 0:23).
 
 # Related concepts:
@@ -549,36 +566,14 @@ The following steps illustrate the typical operation of the source unit when you
 
 3. After waiting the time specified by the NI-DCPower Source Delay property, thesource unit generates a Source Complete Event, as illustrated in the followingfigure.
 
-```mermaid
-graph TD
-    Trigger([Source Trigger]) --> Block
-    
-    subgraph Block [ ]
-        direction LR
-        S[Source] --- D[Source Delay]
-    end
+![](images/e2612c0ec031e6c24e93a6a247a35506d4530decad43dccf882de811a08ad915.jpg)
 
-    Block --> Complete([Source Complete Event])
-
-    style Block fill:none,stroke:#333,stroke-width:1px
-```
 
 4. (Optional) If the NI-DCPower Measure When property is set to Automatically AfterSource Complete, the measure unit takes a measurement after the SourceComplete event generates.
 
-```mermaid
-graph TD
-    Trigger([Source Trigger]) --> MainBlock
-    
-    subgraph MainBlock [ ]
-        direction LR
-        S[Source] --- SD[Source Delay] --- M[Measure]
-    end
+![](images/0dccc847947afd872d0770f1b56a68223980dca182b07ae095e98fade77c8fea.jpg)
 
-    MainBlock -.-> SCE([Source Complete Event])
-    MainBlock --> MCE([Measure Complete Event])
 
-    style MainBlock fill:none,stroke:#333,stroke-width:1px
-```
 
 Note In Single Point source mode, only the Source trigger is available tocontrol the source unit. Accordingly, the Sequence Advance trigger is notavailable, and Start trigger must be set to None.
 
@@ -605,6 +600,7 @@ The following output functions support dynamic reconfiguration:
 • Constant Resistance
 
 • Constant Power
+
 
 Note Some VIs, functions, properties, and attributes are not supported onspecific devices.
 
@@ -668,6 +664,7 @@ c. The source unit waits the time that the next source delay in the sequencespec
 
 d. (Optional) The measure unit takes a measurement and stores it in a buffer onthe instrument.
 
+
 Note The presence of this step is dependent on the settings of NI-DCPower Measure When. If you set the Measure When property toAutomatically After Source Complete, the measure unit takes ameasurement after each source step. Otherwise, the measure unitoperates independently of the source unit.
 
 e. The source unit repeats 3a through 3d for every step in the sequence.
@@ -690,37 +687,9 @@ The following figure illustrates a sequence under the following conditions:
 
 • The source unit is not pulsing.
 
-```mermaid
-graph TD
-    ST([1 Start Trigger]) --> Sequence
+![](images/811cc2d76a6b45d80de749ffb88d67b16aeca7065c6f20323bec384ee77c82a6.jpg)
 
-    subgraph Sequence ["Sequence (Loop Count)"]
-        direction TB
-        SAT([4 Sequence Advance Trigger]) --> Step
 
-        subgraph Step ["Step (Num Steps)"]
-            direction TB
-            SourceTrigger([2a Source Trigger]) --> ActionBlock
-            
-            subgraph ActionBlock [" "]
-                direction LR
-                S[2b Source] --- SD[Source Delay] --- M[2d Measure]
-            end
-
-            ActionBlock -.-> SCE([2c Source Complete Event])
-            ActionBlock --> MCE([Measure Complete Event])
-        end
-
-        Step --> SICE([3 Sequence Iteration Complete Event])
-    end
-
-    Sequence --> SEDE([5 Sequence Engine Done Event])
-
-    %% Styling to mimic the original layout
-    style Sequence fill:none,stroke:#333,stroke-dasharray: 5 5
-    style Step fill:none,stroke:#333
-    style ActionBlock fill:none,stroke:#333
-```
 
 *Sequence Advance Trigger_and Source Trigger are not waited forduring thefirst run of either loop.
 
@@ -731,40 +700,7 @@ The following figure illustrates a sequence under the following conditions:
 
 • The source unit is not pulsing.
 
-```mermaid
-graph TD
-    ST([1 Start Trigger]) --> Sequence
-
-    subgraph Sequence ["'Sequence' (Loop Count)"]
-        direction TB
-        SAT([4 Sequence Advance Trigger*]) --> Step
-
-        subgraph Step ["'Step' (Num Steps)"]
-            direction TB
-            SourceTrigger([2a Source Trigger*]) --> ActionBlock
-            
-            subgraph ActionBlock [" "]
-                direction LR
-                S[2b Source] --- SD[Source Delay]
-            end
-
-            ActionBlock --> SCE([2c Source Complete Event])
-        end
-
-        Step --> SICE([3 Sequence Iteration Complete Event])
-    end
-
-    Sequence --> SEDE([5 Sequence Engine Done Event])
-
-    %% Footer Note
-    Note[Note: *Sequence Advance Trigger and Source Trigger are not waited for during the first run of either loop.]
-    
-    %% Styling
-    style Sequence fill:none,stroke:#333,stroke-width:2px
-    style Step fill:none,stroke:#333,stroke-dasharray: 5 5
-    style ActionBlock fill:none,stroke:#333
-    style Note stroke:none,fill:none,font-style:italic
-```
+![](images/01c2a2a3f4ad85641691da4a02007f5b87f9c9ac7428e2ecb87ab906c4452795.jpg)
 
 
 # Related concepts:
@@ -860,11 +796,14 @@ Note When you set the NI-DCPower output function to Constant
 
 Resistance, the device will operate in Constant Resistance mode unlessthe Constant Resistance Current Limit is reached, which putsthe device in Constant Current mode.
 
+
+
 Note When you set the NI-DCPower output function to Constant Power,the device will operate in Constant Power mode unless the ConstantPower Current Limit is reached, which puts the device in ConstantCurrent mode.
 
 Consult the NI-DCPower constant resistance and constant power operation example,NI-DCPower Constant Resistance and Constant Power.vi, atC:\Program Files\NI\LVAddons\nidcpower\1\examples\instr\niDCPower\Electronic Load to familiarize yourself with setting up and usingthe constant resistance and power operation modes.
 
-!
+
+
 Note NI-DCPower electronic loads only support Constant Voltage-type DUTswhen using the Constant Power output function.
 
 # Related information:
@@ -889,42 +828,8 @@ In Single Point source mode, the source unit generates a single pulse, then retu
 Figure 2. Single Pulse Cycle
 
 
-```mermaid
-graph TD
-    %% Levels
-    Bias((Bias Level))
-    Pulse((Pulse Level))
+![](images/864073e20a286bf75cb568ee87777daffea86c35120c7dfc3fa91953a9fd8394.jpg)
 
-    %% Timeline
-    Bias -->|Pulse Trigger Received| Pulse
-    
-    subgraph OnTime ["On Time (Min 20 μs)"]
-        direction LR
-        SD[Source Delay] --- M[Measure]
-    end
-
-    Pulse -.-> SD
-    SD --> ESC[Emit Source Complete]
-    M --> EMC[Emit Measure Complete]
-
-    EMC -->|Falling Edge| Bias
-    
-    subgraph OffTime ["Off Time"]
-        direction LR
-        BD[Bias Delay]
-    end
-
-    Bias -.-> BD
-    BD --> EPC[Emit Pulse Complete]
-    EPC --> ERPT[Emit Ready for Pulse Trigger]
-    ERPT -->|Loop| Bias
-
-    %% Styling
-    style OnTime fill:#f9f9f9,stroke:#333,stroke-width:2px
-    style OffTime fill:#f9f9f9,stroke:#333,stroke-width:2px
-    style Pulse fill:#fff4dd,stroke:#d4a017
-    style Bias fill:#e1f5fe,stroke:#01579b
-```
 
 The following steps illustrate the typical operation of the source unit for each pulsewhen you initiate a pulse output function.
 
@@ -956,50 +861,8 @@ In Sequence source mode, the source unit uses a list of pulse levels one after a
 Figure 3. Sequence with Two Pulses
 
 
-```mermaid
-graph TD
-    %% Global Start
-    ST([Start Trigger Received]) --> P0_S1
+![](images/1747f73f3fd1f0f8ef1aee9060398df16fc36d475fba5f98e5d854f897a3ed4e.jpg)
 
-    subgraph Iteration1 ["Sequence Iteration 0"]
-        direction TB
-        subgraph Step0_0 ["Step 0"]
-            P0_S1[Pulse Level 0] --- SD0_0[Source Delay 0]
-        end
-        
-        Step0_0 --> PTR1([Pulse Trigger Received])
-        
-        subgraph Step0_1 ["Step 1"]
-            PTR1 --> P1_S1[Pulse Level 1] --- SD0_1[Source Delay 1]
-        end
-    end
-
-    Iteration1 --> ESIC1([Emit Sequence Iteration Complete])
-    ESIC1 --> SATR([Sequence Advance Trigger Received])
-
-    subgraph Iteration2 ["Sequence Iteration 1"]
-        direction TB
-        subgraph Step1_0 ["Step 0"]
-            SATR --> P0_S2[Pulse Level 0] --- SD1_0[Source Delay 0]
-        end
-        
-        Step1_0 --> PTR2([Pulse Trigger Received])
-        
-        subgraph Step1_1 ["Step 1"]
-            PTR2 --> P1_S2[Pulse Level 1] --- SD1_1[Source Delay 1]
-        end
-    end
-
-    Iteration2 --> ESIC2([Emit Sequence Iteration Complete])
-    ESIC2 --> ESED([Emit Sequence Engine Done])
-
-    style Iteration1 fill:none,stroke:#333,stroke-width:2px
-    style Iteration2 fill:none,stroke:#333,stroke-width:2px
-    style Step0_0 fill:#f9f9f9,stroke:#666
-    style Step0_1 fill:#f9f9f9,stroke:#666
-    style Step1_0 fill:#f9f9f9,stroke:#666
-    style Step1_1 fill:#f9f9f9,stroke:#666
-```
 
 Note Timing properties for pulses, such as pulse on time, pulse off time,and pulse bias delay, must be constant for every step in the sequence.
 
@@ -1066,7 +929,6 @@ NI instruments cannot differentiate between an auxiliary power loss or a blown f
 Simulate an instrument using NI-DCPower or Measurement & Automation Explorer(MAX) to develop, modify, and/or test an application without hardware.
 
 Using a simulated device to test an application eliminates the risk of hardwaredamage. Additionally, you can use a simulated instrument to evaluate an NI productfor which you do not have hardware.
-
 
 Tip As with any installed and configured instrument, you can use
 
@@ -1150,6 +1012,7 @@ The power supply appears in the MAX configuration tree with a yellow icon indica
 # Import/Export A xport Attribute Configur e Configuration Mapping tionBehavior
 
 When you import and export configurations between NI-DCPower sessions initializedwith different channels, the configurations of the exporting channels map to theimporting channels. This mapping is based on the order of resources that you specifyin the resource name input of the Initialize With Independent Channels node for eachsession..
+
 
 Note NI-DCPower returns an error if the total number of channels initializedfor the exporting session is not equal to the total number of channelsinitialized for the importing session. If the number of initialized channels isequal between sessions, you can export and import configurations betweenmultiple physical instruments. For each channel mapping created, NI-DCPower checks that the model of an exporting instrument channel matchesthe model of the importing instrument channel.
 

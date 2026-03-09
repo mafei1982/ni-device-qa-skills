@@ -37,6 +37,7 @@ export interface Skill {
   subtype?: string;
   device?: string;
   category?: string;
+  language?: string;
 }
 
 export interface SkillsResponse {
@@ -65,14 +66,16 @@ export async function getSkillContent(
 export async function uploadDocSkill(
   file: File,
   device: string,
-  subtype: "user_manual" | "specifications",
-  category: string
+  subtype: "user_manual" | "specifications" | "programming_api",
+  category: string,
+  language?: string,
 ): Promise<Skill> {
   const form = new FormData();
   form.append("file", file);
   form.append("device", device);
   form.append("subtype", subtype);
   form.append("category", category);
+  if (language) form.append("language", language);
   const res = await axios.post<Skill>(`${BASE_URL}/api/skills/upload`, form);
   return res.data;
 }
@@ -92,6 +95,74 @@ export async function sendChat(messages: Message[], model?: string): Promise<Cha
     model: model || undefined,
   });
   return res.data;
+}
+
+/**
+ * Stream-based chat that delivers tokens incrementally via SSE.
+ * Falls back to a thrown error if the stream closes without a "done" event.
+ * Accepts an optional AbortSignal for cancellation (e.g. on component unmount).
+ */
+export async function sendChatStream(
+  messages: Message[],
+  model: string | undefined,
+  onToken: (token: string) => void,
+  onStatus?: (status: string) => void,
+  signal?: AbortSignal,
+): Promise<ChatResponse> {
+  const res = await fetch(`${BASE_URL}/api/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ messages, model: model || undefined }),
+    signal,
+  });
+
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+  }
+
+  const reader = res.body!.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let result: ChatResponse | null = null;
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+
+      // SSE events are separated by double newlines
+      const parts = buffer.split("\n\n");
+      buffer = parts.pop() || "";
+
+      for (const part of parts) {
+        const trimmed = part.trim();
+        if (!trimmed || !trimmed.startsWith("data: ")) continue;
+
+        try {
+          const data = JSON.parse(trimmed.substring(6));
+          if (data.type === "token") {
+            onToken(data.content);
+          } else if (data.type === "status" && onStatus) {
+            onStatus(data.content);
+          } else if (data.type === "done") {
+            result = { response: "", messages: data.messages };
+          }
+        } catch {
+          // skip malformed events
+        }
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  if (!result) {
+    throw new Error("Stream ended without completion event");
+  }
+
+  return result;
 }
 
 export async function getModels(): Promise<ModelsResponse> {

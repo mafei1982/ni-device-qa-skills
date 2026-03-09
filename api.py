@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import re
 from pathlib import Path
@@ -8,10 +9,18 @@ import httpx
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from openai import AsyncOpenAI
 from pydantic import BaseModel
+
+logger = logging.getLogger("ni_device_qa")
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
+)
 
 load_dotenv()
 
@@ -31,6 +40,13 @@ LLM_API_KEY = os.environ["LLM_API_KEY"]
 
 METADATA_PATH = Path(__file__).parent / "skills" / "metadata.json"
 SKILLS_DIR = Path(__file__).parent / "skills"
+IMAGES_DIR = SKILLS_DIR / "docs" / "images"
+
+# Ensure the images directory exists
+IMAGES_DIR.mkdir(parents=True, exist_ok=True)
+
+# Serve skill doc images at /images/{filename}
+app.mount("/images", StaticFiles(directory=str(IMAGES_DIR)), name="images")
 
 
 class ChatRequest(BaseModel):
@@ -99,15 +115,16 @@ async def upload_doc_skill(
     device: str = Form(...),
     subtype: str = Form(...),
     category: str = Form(""),
+    language: str = Form(""),
 ):
-    """Upload a new doc skill (user_manual or specifications).
+    """Upload a new doc skill (user_manual, specifications, or programming_api).
 
     Saves the Markdown file and appends an entry to metadata.json.
     """
-    if subtype not in ("user_manual", "specifications"):
+    if subtype not in ("user_manual", "specifications", "programming_api"):
         raise HTTPException(
             status_code=400,
-            detail="subtype must be 'user_manual' or 'specifications'.",
+            detail="subtype must be 'user_manual', 'specifications', or 'programming_api'.",
         )
 
     # Generate a safe skill name from device + subtype
@@ -132,13 +149,26 @@ async def upload_doc_skill(
         s for s in registry["skills"] if s["name"] != skill_name
     ]
 
+    _subtype_labels = {
+        "user_manual": "User Manual",
+        "specifications": "Specifications",
+        "programming_api": "Programming API Reference",
+    }
+
+    desc = f"{device} {_subtype_labels[subtype]}"
+    if subtype == "programming_api" and language.strip():
+        desc += f" ({language.strip()})"
+    desc += " — official documentation."
+
     new_entry: dict[str, str] = {
         "name": skill_name,
         "type": "doc",
         "subtype": subtype,
         "device": device_slug,
-        "description": f"{device} {'User Manual' if subtype == 'user_manual' else 'Specifications'} — official documentation.",
+        "description": desc,
     }
+    if subtype == "programming_api" and language.strip():
+        new_entry["language"] = language.strip()
     if category.strip():
         new_entry["category"] = re.sub(
             r"[^a-z0-9]+", "_", category.strip().lower()
@@ -206,57 +236,122 @@ async def chat(request: ChatRequest):
     )
 
     messages = [{"role": "system", "content": system_prompt}] + request.messages
-
-    client = AsyncOpenAI(base_url=LLM_API_URL, api_key=LLM_API_KEY)
+    chosen_model = request.model or LLM_MODEL_NAME
+    oai_client = AsyncOpenAI(base_url=LLM_API_URL, api_key=LLM_API_KEY)
     server_params = StdioServerParameters(command="uv", args=["run", "server.py"])
 
-    async with stdio_client(server_params) as (read, write):
-        async with ClientSession(read, write) as session:
-            await session.initialize()
+    async def event_stream():
+        nonlocal messages
+        async with stdio_client(server_params) as (read, write):
+            async with ClientSession(read, write) as session:
+                await session.initialize()
 
-            tools_result = await session.list_tools()
-            openai_tools = [
-                {
-                    "type": "function",
-                    "function": {
-                        "name": t.name,
-                        "description": t.description,
-                        "parameters": t.inputSchema,
-                    },
-                }
-                for t in tools_result.tools
-            ]
+                tools_result = await session.list_tools()
+                openai_tools = [
+                    {
+                        "type": "function",
+                        "function": {
+                            "name": t.name,
+                            "description": t.description,
+                            "parameters": t.inputSchema,
+                        },
+                    }
+                    for t in tools_result.tools
+                ]
 
-            while True:
-                chosen_model = request.model or LLM_MODEL_NAME
-                resp = await client.chat.completions.create(
-                    model=chosen_model,
-                    messages=messages,
-                    tools=openai_tools,
-                )
-                msg = resp.choices[0].message
+                while True:
+                    stream = await oai_client.chat.completions.create(
+                        model=chosen_model,
+                        messages=messages,
+                        tools=openai_tools,
+                        stream=True,
+                    )
 
-                if msg.tool_calls:
-                    messages.append(msg.model_dump(exclude_unset=True))
-                    for tc in msg.tool_calls:
-                        args = json.loads(tc.function.arguments or "{}")
-                        result = await session.call_tool(tc.function.name, args)
-                        tool_output = "\n".join(
-                            item.text
-                            for item in result.content
-                            if hasattr(item, "text")
-                        )
+                    tool_calls_accum: dict[int, dict] = {}
+                    content_accum = ""
+
+                    async for chunk in stream:
+                        if not chunk.choices:
+                            continue
+                        choice = chunk.choices[0]
+                        delta = choice.delta
+
+                        # Accumulate tool call fragments
+                        if delta and delta.tool_calls:
+                            for tc in delta.tool_calls:
+                                idx = tc.index
+                                if idx not in tool_calls_accum:
+                                    tool_calls_accum[idx] = {
+                                        "id": "",
+                                        "function_name": "",
+                                        "function_args": "",
+                                    }
+                                if tc.id:
+                                    tool_calls_accum[idx]["id"] = tc.id
+                                if tc.function and tc.function.name:
+                                    tool_calls_accum[idx]["function_name"] += tc.function.name
+                                if tc.function and tc.function.arguments:
+                                    tool_calls_accum[idx]["function_args"] += tc.function.arguments
+
+                        # Stream text tokens to client
+                        if delta and delta.content:
+                            content_accum += delta.content
+                            yield f"data: {json.dumps({'type': 'token', 'content': delta.content})}\n\n"
+
+                    # --- Tool calls: execute and loop back ---
+                    if tool_calls_accum:
+                        tool_calls_list = [
+                            {
+                                "id": tc["id"],
+                                "type": "function",
+                                "function": {
+                                    "name": tc["function_name"],
+                                    "arguments": tc["function_args"],
+                                },
+                            }
+                            for tc in tool_calls_accum.values()
+                        ]
                         messages.append(
                             {
-                                "role": "tool",
-                                "tool_call_id": tc.id,
-                                "content": tool_output,
+                                "role": "assistant",
+                                "content": None,
+                                "tool_calls": tool_calls_list,
                             }
                         )
-                    continue
 
-                final = msg.content or ""
-                messages.append({"role": "assistant", "content": final})
-                # Strip the prepended system message before returning so the
-                # frontend never re-sends it on subsequent calls.
-                return {"response": final, "messages": messages[1:]}
+                        for tc_data in tool_calls_accum.values():
+                            name = tc_data["function_name"]
+                            args = json.loads(tc_data["function_args"] or "{}")
+
+                            logger.info("Tool call: %s(%s)", name, json.dumps(args))
+                            if name == "load_skill_content":
+                                skill_name = args.get("skill_name", "unknown")
+                                logger.info(
+                                    ">>> Loading skill/doc: %s", skill_name
+                                )
+                                yield f"data: {json.dumps({'type': 'status', 'content': f'Loading skill: {skill_name}'})}\n\n"
+
+                            result = await session.call_tool(name, args)
+                            tool_output = "\n".join(
+                                item.text
+                                for item in result.content
+                                if hasattr(item, "text")
+                            )
+                            messages.append(
+                                {
+                                    "role": "tool",
+                                    "tool_call_id": tc_data["id"],
+                                    "content": tool_output,
+                                }
+                            )
+
+                        continue  # loop back for more LLM calls
+
+                    # --- Final text response: send done event ---
+                    messages.append({"role": "assistant", "content": content_accum})
+                    # Strip the prepended system message before returning so the
+                    # frontend never re-sends it on subsequent calls.
+                    yield f"data: {json.dumps({'type': 'done', 'messages': messages[1:]})}\n\n"
+                    break
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream")

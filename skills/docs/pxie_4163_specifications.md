@@ -10,9 +10,6 @@ PXIe-4163 Specifications . . 3
 
 These specifications apply to the PXIe-4163.
 
-![](images/d581e2c3b99f6cc6cad51713079f9ba12c07a8bfbb7d91ae36a362b14ab70a1b.jpg)
-
-
 Note In this document, the PXIe-4163 (10 pA) and PXIe-4163 (100 pA) arereferred to inclusively as the PXIe-4163.
 
 The information in this document applies to all versions of the PXIe-4163 unlessotherwise specified. Use the information in the following table to confirm your modulevariant.

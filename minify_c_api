@@ -1,0 +1,190 @@
+"""Minify a C API reference Markdown file for LLM consumption.
+
+Strategy:
+1. Convert HTML <table> elements to compact Markdown tables (preserving data).
+2. Remove purely structural / boilerplate sections that add no API knowledge:
+   - # Groups / # Group members / # Attachments blocks
+   - Repeated "# Note" blocks (the initializing-with-independent-channels
+     boilerplate, supported-devices references, etc.)
+   - The identical "# Returns" boilerplate that appears on every function.
+3. Collapse excessive blank lines.
+"""
+
+import re
+from html import unescape
+
+
+# ── HTML table → Markdown table ──────────────────────────────────────────
+
+def _html_table_to_md(match: re.Match) -> str:
+    """Convert a single <table>…</table> to a compact Markdown table."""
+    html = match.group(0)
+
+    # Parse rows
+    rows: list[list[str]] = []
+    for tr in re.findall(r"<tr>(.*?)</tr>", html, re.DOTALL):
+        cells = [
+            unescape(c.strip()).replace("\n", " ").replace("|", "\\|")
+            for c in re.findall(r"<td>(.*?)</td>", tr, re.DOTALL)
+        ]
+        rows.append(cells)
+
+    if not rows:
+        return ""
+
+    # Determine column count from header row
+    col_count = max(len(r) for r in rows)
+
+    # Pad short rows (continuation rows) — merge into previous row's last cell
+    merged: list[list[str]] = []
+    for row in rows:
+        if row and all(c == "" for c in row[:-1]) and merged:
+            # continuation row: append non-empty trailing cell(s) to last real row
+            for i, c in enumerate(row):
+                if c:
+                    merged[-1][i] = (merged[-1][i] + " " + c).strip() if i < len(merged[-1]) else c
+        else:
+            # pad to col_count
+            row += [""] * (col_count - len(row))
+            merged.append(row)
+
+    if not merged:
+        return ""
+
+    # Build Markdown table
+    lines: list[str] = []
+    header = merged[0]
+    lines.append("| " + " | ".join(header) + " |")
+    lines.append("| " + " | ".join("---" for _ in header) + " |")
+    for row in merged[1:]:
+        lines.append("| " + " | ".join(row) + " |")
+
+    return "\n".join(lines)
+
+
+def convert_tables(text: str) -> str:
+    return re.sub(r"<table>.*?</table>", _html_table_to_md, text, flags=re.DOTALL)
+
+
+# ── Remove boilerplate sections ─────────────────────────────────────────
+
+# Structural navigation blocks that add no API knowledge
+_SECTION_PATTERNS = [
+    r"^#{1,3} Groups\s*\n(?:(?!^#{1,3} ).*\n)*",
+    r"^#{1,3} Group members\s*\n(?:(?!^#{1,3} ).*\n)*",
+    r"^#{1,3} Attachments\s*\n(?:(?!^#{1,3} ).*\n)*",
+]
+
+# Identical Returns boilerplate present on every function
+_RETURNS_BOILERPLATE = (
+    r"^#{1,3} Returns\s*\n"
+    r"Reports the status of this operation.*?"
+    r"(?=^#{1,3} |\Z)"
+)
+
+# Repetitive Note content patterns (match text inside the note block).
+_BOILERPLATE_NOTES = [
+    r"This attribute is not supported by all (?:devices|instruments)\.",
+    r"This attribute is not supported in sessions initialized with independent",
+    r"To specify (?:a channel|an instrument) name when accessing this attribute",
+    r"This function (?:is not supported by all|can only be used in a session initialized to a single)",
+    r"NI-DCPower uses the terms .source. and .output.",
+    r"For more information about supported devices and terminals",
+    r"You must specify the input terminal for a PXI",
+    r"To specify (?:a channel|an instrument) name when calling this function",
+]
+
+
+def _remove_note_blocks(text: str) -> str:
+    """Remove only Note blocks whose content matches known boilerplate.
+
+    A Note block = '# Note' heading + blank lines + a text paragraph
+    (up to the next blank line or heading).  We intentionally do NOT
+    consume past the paragraph boundary so that adjacent content like
+    'Parameters' tables is preserved.
+    """
+    # Pattern: # Note + optional blank lines + one paragraph of text + trailing blanks
+    note_pat = re.compile(
+        r"(?:^\s*\n)*"            # optional leading blank lines
+        r"^#{1,3}\s+Note\s*\n"   # the heading
+        r"\s*\n?"                 # optional blank line after heading
+        r"((?:(?!^#{1,3} )(?!\S*\n\s*\n).+\n)*"  # paragraph lines (non-heading, stop at blank line)
+        r"(?:(?!^#{1,3} ).+\n)?)"  # last line of paragraph (may not end with blank)
+        r"(?:\s*\n)*",            # trailing blank lines
+        re.MULTILINE,
+    )
+
+    boilerplate_res = [re.compile(p, re.DOTALL | re.IGNORECASE) for p in _BOILERPLATE_NOTES]
+
+    def _filter(m: re.Match) -> str:
+        body = m.group(1).strip() if m.group(1) else ""
+        if not body:
+            return ""  # empty note
+        for bp in boilerplate_res:
+            if bp.search(body):
+                return "\n"  # known boilerplate — remove, leave one newline
+        return m.group(0)  # keep meaningful notes
+
+    return note_pat.sub(_filter, text)
+
+
+def remove_boilerplate(text: str) -> str:
+    for pat in _SECTION_PATTERNS:
+        text = re.sub(pat, "", text, flags=re.MULTILINE)
+
+    text = _remove_note_blocks(text)
+
+    text = re.sub(_RETURNS_BOILERPLATE, "", text, flags=re.MULTILINE | re.DOTALL)
+
+    # Remove "# Remarks" heading when the body is empty or only boilerplate fragments
+    text = re.sub(
+        r"^#{1,3} Remarks\s*\n(?:\s*\n)*(?=#{1,3} |\Z)",
+        "",
+        text,
+        flags=re.MULTILINE,
+    )
+
+    # Also remove Remarks whose only content is a leftover sentence fragment
+    # from a note that was partially removed (e.g., "channels." on its own)
+    text = re.sub(
+        r"^#{1,3} Remarks\s*\n\s*\S.{0,40}\.\s*\n\s*(?=\n#{1,3} |\Z)",
+        "",
+        text,
+        flags=re.MULTILINE,
+    )
+
+    # Remove standalone "None" lines (leftover from Groups/Attachments)
+    text = re.sub(r"^None\s*$", "", text, flags=re.MULTILINE)
+
+    return text
+
+
+# ── Collapse whitespace ─────────────────────────────────────────────────
+
+def collapse_whitespace(text: str) -> str:
+    return re.sub(r"\n{3,}", "\n\n", text)
+
+
+# ── Main ─────────────────────────────────────────────────────────────────
+
+def minify_api_doc(input_file: str, output_file: str) -> None:
+    with open(input_file, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    content = convert_tables(content)
+    content = remove_boilerplate(content)
+    content = collapse_whitespace(content)
+
+    with open(output_file, "w", encoding="utf-8") as f:
+        f.write(content.strip() + "\n")
+
+    in_size = len(open(input_file, encoding="utf-8").read())
+    out_size = len(content)
+    print(f"Minification complete!  {in_size:,} → {out_size:,} chars  "
+          f"({out_size / in_size * 100:.1f}%)")
+
+
+minify_api_doc(
+    "dcpower_c_api_programming_api.md",
+    "dcpower_c_api_minified.md",
+)

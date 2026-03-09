@@ -2,9 +2,16 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import json
+import logging
 from pathlib import Path
 
 from mcp.server.fastmcp import FastMCP
+
+logger = logging.getLogger("ni_device_qa.server")
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
+)
 
 mcp = FastMCP("NI_Device_QA_Server")
 
@@ -46,6 +53,7 @@ def load_skill_content(skill_name: str) -> str:
     if not skill_path.exists():
         return f"Error: Skill file not found at '{skill_path}'."
 
+    logger.info("Loading skill/doc: '%s' (type=%s) from %s", skill_name, skill_type, skill_path)
     return skill_path.read_text(encoding="utf-8")
 
 

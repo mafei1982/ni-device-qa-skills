@@ -1,166 +1,8 @@
 # PXIe-4135 UserManual
 
-# Contents
-
-Welcome to the PXIe-4135 User Manual 4
-
-PXIe-4135 Overview . . 5
-
-Components of a PXIe-4135 System . . 8
-
-PXIe-4135 Theory of Operation . . 13
-
-PXIe-4135 Front Panel . 16
-
-PXIe-4135 Pinout . . 19
-
-PXIe-4135 LED Indicators . . 21
-
-PXIe-4135 Installation and Configuration . 24
-
-Unpacking the Kit . . 24
-
-Installing the Software . . 25
-
-Installing the PXIe-4135 into a Chassis . 25
-
-Installing the Output Connector Assembly onto the PXIe-4135 . 27
-
-Verifying the Installation in MAX . 28
-
-Self-Calibrating the PXIe-4135 in MAX . . 29
-
-Connecting Signals to the PXIe-4135 31
-
-Making Local Sense Measurements . 31
-
-Making Remote Sense Measurements . . 32
-
-Using the Guard Terminals . . 34
-
-Minimizing Voltage Drop Loss when Cabling . . . . . 36
-
-Source Modes . . 39
-
-Sourcing Voltage and Current . 42
-
-Initialize a Session . . 43
-
-Configure the PXIe-4135 for Sourcing . . . 43
-
-Configure the PXIe-4135 for Measuring . . . 45
-
-Configure Triggers and Events 46
-
-Initiate the PXIe-4135 for Sourcing and Measuring . . . 53
-
-Acquire Measurements . . 53
-
-Cease Generation . . 54
-
-Close the Session . . 56
-
-Pulsing Voltage and Current . . 58
-
-Initialize a Session . . 59
-
-Configure the PXIe-4135 for Pulsing . . . . 59
-
-Configure the PXIe-4135 for Measuring . . . . 61
-
-Configure Triggers and Events 62
-
-Initiate the PXIe-4135 for Sourcing and Measuring . . . 70
-
-Acquire Measurements . 70
-
-Cease Generation . . 71
-
-Close the Session . . 73
-
-Example Programs . . . 74
-
-PXIe-4135 Operating Guidelines . . 76
-
-Sourcing and Sinking . . . . 76
-
-Output Impedance . . . 78
-
-Overload Protection (OLP) . . 81
-
-Load Regulation . . 82
-
-Ranges . . . 88
-
-SourceAdapt Custom Transient Response Ranges . . . . 92
-
-Noise . . 92
-
-Sequence Step Delta Time . . 98
-
-Power Measurements . 105
-
-Resistance Measurements . 106
-
-Using the Safety Interlock . 107
-
-Sense Lead Error Detection . . 119
-
-Sourcing and Measuring Terminology . . . . . 120
-
-Calibration . . 122
-
-External Calibration . . 122
-
-Self-Calibration . . 123
-
-Accuracy . . . . 125
-
-Cleaning the PXIe-4135 System . . 127
-
 # Welcome to the PXIe-4135 User Manual
 
 The PXIe-4135 User Manual provides detailed descriptions of product functionality andstep-by-step processes for use.
-
-# Looking for something else?
-
-For information not found in the User Manual for your product, like specifications orAPI reference, browse Related Information.
-
-# Related information:
-
-PXIe-4135 Specifications
-
-PXIe-4135 Calibration Procedure
-
-• NI-DCPower Help
-
-NI-DCPower LabVIEW VI Reference
-
-• NI-DCPower Properties
-
-NI-DCPower C Function Reference
-
-NI-DCPower .NET API Overview
-
-• NI-DCPower Python Reference
-
-• NI-DCPower and LabVIEW Compatibility
-
-• Software and Driver Downloads
-
-Release Notes
-
-License Setup and Activation
-
-• Dimensional Drawings
-
-Product Certifications
-
-• Letter of Volatility
-
-Discussion Forums
-
-• NI Learning Center
 
 # PXIe-4135 Overview
 
@@ -188,14 +30,62 @@ The PXIe-4135 is a high-precision system SMU that has the following features and
 
 • SourceAdapt technology
 
-• PXIe-4135 (20W) Profile:
 
-4-Quadrant Source Measure Unit (SMU)X-Axis: Voltage ($V$) from -200V to +200V.Y-Axis: Current ($I$) from -3A to +3A.Operating Modes:Sourcing: Quadrants I (+V, +I) and III (-V, -I).Sinking: Quadrants II (-V, +I) and IV (+V, -I).Boundary Constraints:Voltage Ceiling: $|V| \le 200\text{V}$Current Ceiling: $|I| \le 3\text{A}$Power Envelope: $|V \times I| \le 200\text{W}$ (The corners of the $V/I$ rectangle are truncated by this hyperbola).Precision Range (Inner Envelope): A secondary restricted zone exists where $|V \times I| \le 20\text{W}$, with specific vertices at $(\pm12\text{V}, \mp1\text{A})$ and $(\pm20\text{V}, \mp1\text{A})$
+Figure 1. PXIe-4135 (20W) Quadrant Diagram
 
 
-• PXIe-4135 (40W) Quadrant Diagram
+![](images/d10664d30a0e19888a5cfb06bbd0d19eca5153522178899f40010a2c032d4612.jpg)
 
-1. Primary Constraints (Outer Envelope)These define the absolute physical limits of the device:Voltage Range: $|V| \le 200\text{V}$Current Range: $|I| \le 3\text{A}$Power Limit: $|V \times I| \le 480\text{W}$Note for LLM: While the maximum product ($160\text{V} \times 3\text{A}$) is $480\text{W}$, the device is primarily restricted by the current cap ($3\text{A}$) until it hits $160\text{V}$. Beyond $160\text{V}$, the current must drop to maintain the $200\text{V}$ limit.2. Secondary Constraints (Inner Envelope)The dark-shaded region represents a "Low Power" or "Precision" range:Maximum Power: $|V \times I| \le 40\text{W}$Current Cap: Limited to $\pm1\text{A}$ within this range.Key Vertices: $(\pm40\text{V}, \pm1\text{A})$ and $(\pm200\text{V}, \pm0.2\text{A})$.3. Quadrant Logic for Functional ReasoningQuadrant I (+V, +I) & III (-V, -I): Sourcing Power (Supply Mode).Quadrant II (-V, +I) & IV (+V, -I): Sinking Power (Load Mode).
+
+
+Legend
+
+
+![](images/aca2251f75b00757a0bf9b00fb305c574bf806882c82453ed63d95c9d191b553.jpg)
+
+
+
+Pulse or DC
+
+
+![](images/35df8c8cc977d38993e2f9ebddad9eb3a522f782179bcf3b44963651af29712e.jpg)
+
+
+
+Pulse only, max.1 ms, $5 \%$ duty cycle
+
+
+![](images/171f7bcab6df9a9b048ecc14013d55ac3a63c3b8d3b4ad3aac2bd457620ba9b8.jpg)
+
+
+
+Pulse only, max. 400 us, $2 \%$ duty cycle
+
+
+
+Figure 2. PXIe-4135 (40W) Quadrant Diagram
+
+
+![](images/f43f099820da8beb521e50fc5a4f85326cf33233efb0d494d4cf7749801fdf16.jpg)
+
+
+
+Legend
+
+
+![](images/59f104d020b92d91ffe1546173fc9beb604eb95ae61d5fe73047dd30a27acda7.jpg)
+
+
+
+Pulse or DC,up to 40 W
+
+
+![](images/35c9c8126ce53651983631832c3a2bf0fc2ef5169c8ecfc45ccd3367fe64e9a3.jpg)
+
+
+
+Pulse only, up to 480 W
+
 
 # Driver Support
 
@@ -210,7 +100,6 @@ Table 1. Earliest Driver Version Support
 # Components of a PXIe-4135 System
 
 The PXIe-4135 is designed for use in a system that includes other hardwarecomponents, drivers, and software.
-
 
 Notice A system and the surrounding environment must meet therequirements defined in the PXIe-4135 Specifications.
 
@@ -238,6 +127,7 @@ Table 3. Cables and Accessories
 
 
 <table><tr><td>Accessory Description</td><td>Notes</td><td>Part Number</td></tr><tr><td>PXIe-4135 Screw Terminal Connector Kit, Interlock connector and GND/LO/ SenseLO connector and backshell</td><td>—</td><td>784484-01</td></tr><tr><td>Calibration Accessory Kit</td><td>Cable assemblies for calibration</td><td>787170-01</td></tr><tr><td>SH3M-FL Daisy Chain Cable for GND/LO/SENSELO</td><td>0.4 m length</td><td>788137-0R4</td></tr><tr><td>SH3M-3M Combicon-Combicon Cable for GND/LO/SENSELO</td><td>0.8 m length</td><td>788136-0R8</td></tr><tr><td rowspan="2">Low-Noise Triax-Triax Cable</td><td>1 m and 3 m lengths</td><td>785659-01/03</td></tr><tr><td>5 m length</td><td>788746-05</td></tr><tr><td>Safety Interlock Connector</td><td>—</td><td>Phoenix Contact 1708595</td></tr><tr><td>Safety Interlock Cable</td><td>8 in. and 48 in. lengths</td><td>142998-08/48</td></tr><tr><td>PXI slot blocker</td><td>Set of 5</td><td>199198-01</td></tr></table>
+
 
 Note Visit NI SMU Cable and Accessory Compatibility at ni.com/r/cable-compatibility for more information about supported cables andaccessories for your instrument.
 
@@ -324,41 +214,10 @@ The following diagram illustrates the design of the PXIe-4135.
 
 Figure 3. PXIe-4135 Block Diagram
 
-```mermaid
-graph LR
-    subgraph Backplane [PXIe Backplane]
-        PB[PXIe Interface]
-        PM[Power Management]
-    end
 
-    subgraph Control_Logic [FPGA Control]
-        PB --> FPGA
-        FPGA --> SA[Source Adapt]
-        FPGA --> Cutoffs[Voltage/Current/Thermal Cutoffs]
-        FPGA --> MU[Measure Unit]
-    end
+![](images/d45627e632fcaa718fc7d31cbe853fb5b2ed8cabb5103cd8c4b88d21c3b030b1.jpg)
 
-    subgraph Isolated_Power [Power & Isolation]
-        PM --> IP[Isolated Power Transformers]
-        IP --> Bias[High Power Bias Rails]
-    end
 
-    subgraph Output_Stage [Signal Path]
-        SA --> DAC
-        DAC --> PS[Power Stage]
-        PS --> Shunts[OCP Shunts]
-        Shunts --> SSR[Output Disconnect SSR]
-        SSR --> Triax[Output HI Triax]
-    end
-
-    subgraph Feedback_Loop [Measurement & Protection]
-        Shunts --> ADC_I[Current ADC]
-        Shunts --> ADC_V[Voltage ADC]
-        ADC_I --> MU
-        ADC_V --> MU
-        OVP[Over-Voltage Protection] --- Shunts
-    end
-```
 
 Legend
 
@@ -369,14 +228,26 @@ Error Monitor User Configurable Monitor Chassis / Non Isolated GND Isolated GND 
 
 # PXIe-4135 Front Panel
 
-
-
-
 Note In this document, the PXIe-4135 (40W) and PXIe-4135 (20W) arereferred to inclusively as the PXIe-4135. The information in this documentapplies to all versions of the PXIe-4135 unless otherwise specified. ThePXIe-4135 (40W) shows PXIe-4135 40W System SMU, and the PXIe-4135(20W) shows PXIe-4135 Precision System SMU on the front panel.
 
 
-Hardware Interface (Front Panel)The PXIe-4135 is a high-precision Source Measure Unit (SMU) with the following physical interfaces:Indicators: ACC (Active/Access) and Voltage warning LEDs.Main Output: Supports up to $\pm 200\text{V}$ and $1\text{A}$ DC, or $3\text{A}$ Pulse.Connectors:3-Position Combicon: LO, SENSE LO, and Chassis Ground connections.Output HI Triax: High-voltage/current output with Guard.Sense HI Triax: For remote sensing to compensate for lead drop.Safety Interlock: Required for high-voltage operation ($\le 3.3\text{V}$ max).
+Figure 4. PXIe-4135 Front Panel
 
+
+![](images/90caf8f22a9d21860a7cabdd52f467491eed71091a81f6ddd86c96758d5a25c8.jpg)
+
+
+1. Access LED
+
+2. Voltage LED
+
+3. Output Connector
+
+4. Triaxial Connector with Output HI terminal
+
+5. Triaxial Connector with Sense HI terminal
+
+6. Safety Interlock Input Connector
 
 # Safety Interlock
 
@@ -395,6 +266,12 @@ The following figures show the terminals on the PXIe-4135 output connector andtr
 # Output Connector
 
 
+Figure 5. PXIe-4135 Output Connector Pinout
+
+
+![](images/9400a6a26df73641f52189d01ff45ff34cdac4431c92bf9f25e06189dc03620a.jpg)
+
+
 
 Table 4. Signal Descriptions
 
@@ -402,6 +279,14 @@ Table 4. Signal Descriptions
 <table><tr><td>Signal</td><td>Description</td></tr><tr><td>Chassis Ground</td><td>Tied to chassis ground through module front panel. Use for connections to cable shields or grounding the LO force terminal.</td></tr><tr><td>Output LO</td><td>LO force terminal connected to channel power stage (generates and/or dissipates power). Positive polarity is defined as voltage measured on HI &gt; LO.</td></tr><tr><td>Sense LO</td><td>Voltage remote sense input terminals. Used to compensate for IR voltage drops in cable leads, connectors, and switches.</td></tr></table>
 
 # Triaxial Connectors
+
+
+Figure 6. PXIe-4135 Triaxial Connectors Pinout
+
+
+![](images/0d46e2b475e7f035aaa88d9c737751bb9be30ee3d5b8ef83ff2754bee16bb269.jpg)
+
+
 
 Table 5. Signal Descriptions
 
@@ -430,6 +315,7 @@ The LEDs may not light until the module has been configured in MAX. Beforeprocee
 
 If the Access LED fails to light after you power on the chassis, a problem may exist withthe chassis power rails, a hardware module, or the LED.
 
+
 Notice Apply external signals only while the PXIe-4135 is powered on.
 
 Applying external signals while the module is powered off may causedamage.
@@ -440,11 +326,14 @@ Applying external signals while the module is powered off may causedamage.
 
 3. Remove the module from the chassis and inspect it for damage.
 
+
+
 # Notice Do not reinstall a damaged module.
 
 4. Install the module in a different, supported slot within the same PXI chassis.
 
 5. Power on the chassis.
+
 
 Note If you are using a PC with a device for PXI remote control system,power on the chassis before powering on the computer.
 
@@ -483,11 +372,13 @@ Complete the following steps to install the PXIe-4135 into a chassis and prepare
 
 # Unpacking the Kit
 
+
 Notice To prevent electrostatic discharge (ESD) from damaging the device,ground yourself using a grounding strap or by holding a grounded object,such as your computer chassis.
 
 1. Touch the antistatic package to a metal part of the computer chassis.
 
 2. Remove the device from the package and inspect the device for loose componentsor any other sign of damage.
+
 
 Notice Never touch the exposed pins of connectors.
 
@@ -498,6 +389,34 @@ Note Do not install a device if it appears damaged in any way.
 Store the device in the antistatic package when the device is not in use.
 
 # Kit Contents
+
+
+Figure 7. PXIe-4135 Kit Contents
+
+
+![](images/cb662358e5f92d4a82f59c2271cf74ed7cbc718ce9bd408e9c9cddbda3268e53.jpg)
+
+
+![](images/a1d6caa824cec7de2b276a273be66743dc1be37435c637ea71ae3442e163de8e.jpg)
+
+
+
+2
+
+
+![](images/68747923a82eb14b23eb688f7a0c338a45f444cde0cae8cf0582eaceda41efb4.jpg)
+
+
+
+3
+
+
+![](images/2f4da1b4b8ec4aabf09522d87a1b731d66568aa3d30c9e79b8d23437723f2448.jpg)
+
+
+
+4
+
 
 1. PXIe-4135 Module
 
@@ -517,11 +436,13 @@ You must be an Administrator to install NI software on your computer.
 
 3. Follow the instructions in the installation prompts.
 
+
 Note Windows users may see access and security messages duringinstallation. Accept the prompts to complete the installation.
 
 4. When the installer completes, select Restart in the dialog box that prompts you torestart, shut down, or restart later.
 
 # Installing the PXIe-4135 into a Chassis
+
 
 Notice To prevent damage to the PXIe-4135 caused by ESD orcontamination, handle the module using the edges or the metal bracket.
 
@@ -545,6 +466,13 @@ For more information about optimal chassis positioning, refer to the chassisdocu
 
 8. Ensure that the ejector handle is in the downward (unlatched) position.
 
+
+Figure 8. Module Installation
+
+
+![](images/6177481aa5b026d8204d0ff55aa7e1e2e26d5b9245710fafcf5481bf4071d455.jpg)
+
+
 9. Place the module edges into the module guides at the top and bottom of the
 
 chassis. Slide the module into the slot until it is fully inserted.
@@ -553,9 +481,11 @@ chassis. Slide the module into the slot until it is fully inserted.
 
 11. Secure the module front panel to the chassis using the front-panel mountingscrews.
 
+
 Note Tightening the top and bottom mounting screws increasesmechanical stability and also electrically connects the front panel to thechassis, which can improve the signal quality and electromagneticperformance.
 
 12. Cover all empty slots using either filler panels (standard or EMC) or slot blockerswith filler panels, depending on your application.
+
 
 Note For more information about installing slot blockers and fillerpanels, go to ni.com/r/pxiblocker.
 
@@ -566,6 +496,7 @@ Note For more information about installing slot blockers and fillerpanels, go to
 Notice For LO and Sense LO connections, use only use twisted, shielded paircable to ensure specified EMC performance.
 
 1. Open the output connector assembly and expose the Output LO, Sense LO, andChassis Ground cable conductors with an insulation strip tool.
+
 
 Note The maximum strip length for the Output LO and Sense LO cable is10 mm (0.394 in.).
 
@@ -587,11 +518,14 @@ exposed shield foil or braid extends outside of the backshell.
 
 9. Power on the chassis.
 
+
+
 Note Low energy transients can appear at the output terminals of yourPXIe-4135 during certain situations, such as power-up, power-down,device driver loading, and self-calibration.
 
 # Verifying the Installation in MAX
 
 Use Measurement & Automation Explorer (MAX) to configure your NI hardware. MAXinforms other programs about which NI hardware products are in the system and howthey are configured. MAX is automatically installed with NI-DCPower.
+
 
 Note The PXIe-4135 (40W) appears in MAX as NI PXIe-4135 (40W) andthe PXIe-4135 (20W) appears in MAX as NI PXIe-4135.
 
@@ -600,6 +534,7 @@ Note The PXIe-4135 (40W) appears in MAX as NI PXIe-4135 (40W) andthe PXIe-4135 (
 2. In the configuration tree, expand Devices and Interfaces to see the list of installedNI hardware.Installed modules appear under the name of their associated chassis.
 
 3. Expand your Chassis tree item.MAX lists all modules installed in the chassis. Your default names may vary.
+
 
 Note If you do not see your module listed, press $\tt { < F 5 > }$ to refresh the listof installed modules. If the module is still not listed, power off the system,ensure the module is correctly installed, and restart.
 
@@ -650,6 +585,7 @@ Self-calibration adjusts the PXIe-4135 for variations in the module environment.
 
 1. Install the PXIe-4135 and let it warm up for the recommended warm-up time listedin the PXIe-4135 Specifications.
 
+
 Note Warm up begins when the PXI chassis has been powered on andthe operating system has completely loaded.
 
 2. (Optional) Set properties to save the self-calibration data to the EEPROM.
@@ -660,7 +596,6 @@ Note The only supported values for the niDCPower SelfCalibration Persistence pro
 NIDCPOWER_ATTR_VAL_WRITE_TO_EEPROM, respectively. Thissetting saves the calibration data to the onboard EEPROM, so thecorrections survive power cycling and device resetting. Because EEPROMhas a limited number of write cycles, NI recommends that you save yourself-calibration data to EEPROM no more than once per day.
 
 3. Self-calibrate the PXIe-4135 by clicking the Self-Calibrate button in MAX or callingniDCPower Cal Self Calibrate (niDCPower_CalSelfCalibrate).
-
 
 
 Note Low energy transients can appear at the output terminals of yourPXIe-4135 during certain situations, such as power-up, power-down,device driver loading, and self-calibration.
@@ -680,6 +615,12 @@ Refer to the following topics for guidance about PXIe-4135 signal connections.
 Local sense measurements use a single set of leads for output and voltagemeasurement.
 
 
+Figure 9. Connecting Signals for Local Sense Measurement
+
+
+![](images/13e73f4ac2519aa7a476da9695897a3dd03a03b422b9b63a8256a82d64a22569.jpg)
+
+
 When the PXIe-4135 is operating in Constant Voltage mode, local sense forces therequested voltage at the output terminals of the module. The actual voltage at theDUT terminals is lower than the requested output because of the output leadresistance error.
 
 The error in the DUT voltage measurement is due to the output current, the outputresistance of the source (specified as load regulation), and the resistance of the leads
@@ -695,12 +636,31 @@ The output resistance of the source typically includes the effective resistance 
 If the source has remote sense capabilities and a 2-wire configuration needs to bemaintained, you can remove the effect of any protection circuitry in series with thesourcing path by configuring the channel for remote sense and connecting the senseterminals externally to their respective output terminals, as illustrated in the followingfigure.
 
 
+Figure 10. Connecting Local Sense Hardware with a Remote Sense Channel Configuration
+
+
+
+Power Supply/SMU Channel
+
+
+![](images/217cb758271bb0f757035bbb554a8ed5d88b73fe8a17e0566483b5262a9903ce.jpg)
+
 
 # Making Remote Sense Measurements
 
 Remote source measurements, sometimes referred to as 4-wire sense, require 4-wire
 
 connections to the DUT (and 4-wire switches if a switching system is used to expandthe channel count). In a remote sense configuration, one set of leads carries the outputcurrent, while another set of leads measures voltage directly at the DUT terminals.
+
+
+Figure 11. Connecting for a Remote Sense Measurement
+
+
+
+Power Supply/SMU Channel
+
+
+![](images/61a97152163d88f33351ab663713e9fb5aa93f651aa05fb62720850d502da961.jpg)
 
 
 
@@ -711,6 +671,7 @@ Although the current flowing in the output leads can be several amps or more,dep
 When using remote sense, remember that the magnitude of the voltage drop acrossthe higher current output leads is usually limited to one or two volts per lead,depending on the power supply or SMU. When attempting to force a voltage using theDC Voltage output function, dropping more voltage across the output leads than thespecified maximum in remote sense mode may result in a voltage at the load that is
 
 less than the requested level.
+
 
 Notice When attempting to force a current using the DC Current outputfunction while using either local or remote sense, excessive line drop mayforce the power supply or SMU into Constant Voltage mode before therequested current level can be reached.
 
@@ -740,82 +701,15 @@ In the following figures, the external shield of the cable could be connected to
 
 Figure 12. Leakage without Guarding (IMeasured = ILoad + IL)
 
-```mermaid
-graph LR
-    subgraph Instrument
-        HI_Term[HI]
-        LO_Term[LO]
-    end
 
-    subgraph Coaxial_Cable [Coaxial Cable Layers]
-        direction TB
-        Core((Center Conductor))
-        Shield((Outer Shield))
-    end
-
-    subgraph Load_Side [Measurement End]
-        RLoad[R Load]
-    end
-
-    %% Electrical Connections
-    HI_Term --- Core
-    Core ---|I Measured| RLoad
-    
-    LO_Term --- Shield
-    LO_Term --- RLoad
-    
-    %% Leakage Path
-    Core -.->|I L Leakage| Shield
-
-    %% Style
-    style Coaxial_Cable fill:#fff5ee,stroke:#008b8b,stroke-width:2px
-    style Instrument fill:#fff,stroke:#333
-```
+![](images/5e2894c20c3f5534288b285e99ab35d74e43ae307871bcffa1d1955377d2e663.jpg)
 
 
 
 Figure 13. Reducing Leakage with Guarding (IMeasured $=$ ILoad)
 
 
-```mermaid
-graph LR
-    subgraph Instrument
-        HI_Term[HI]
-        Guard_Term[Guard]
-        LO_Term[LO]
-    end
-
-    subgraph Triaxial_Cable [Triaxial Cable Layers]
-        direction TB
-        Core((Center Conductor))
-        InnerShield((Inner Shield / Guard))
-        OuterShield((Outer Shield / Ground))
-    end
-
-    subgraph Load_Side [Measurement End]
-        RLoad[R Load]
-    end
-
-    %% Electrical Connections
-    HI_Term --- Core
-    Core ---|I Measured| RLoad
-    
-    Guard_Term --- InnerShield
-    
-    LO_Term --- OuterShield
-    LO_Term --- RLoad
-    
-    %% Annotations within the cable (Resistances/Leakage)
-    Core -.->|0V Potential Diff| InnerShield
-    InnerShield -.->|I G| OuterShield
-
-    %% Grounding
-    LO_Term --- Gnd[fa:fa-arrow-down Ground]
-
-    %% Style
-    style Triaxial_Cable fill:#f0f8ff,stroke:#008b8b,stroke-width:2px
-    style Instrument fill:#fff,stroke:#333
-```
+![](images/a0dd6fdd8c90b9d19aa94cdf7a78c3e276165f345a9553f120d58fe08830af75.jpg)
 
 
 # Minimizing Voltage Drop Loss when Cabling
@@ -831,6 +725,7 @@ To minimize voltage drop caused by cabling:
 • Use the thickest wire gauge appropriate for your application. NI recommends18 AWG or lower.
 
 To reduce noise picked up by the cables that connect the instrument to a load, twisteach wire pair. Refer to the following table to determine the wire gauge appropriate foryour application.
+
 
 Caution Use wire that is thick enough to avoid overheating if the outputcurrent from the power supply or SMU were to short circuit.
 
@@ -910,6 +805,8 @@ Sequence source mode encompasses two types of sequences:
 
 step, in addition to basic voltage outputs or current outputs and source delays, forany number of channels.
 
+
+
 Note You cannot program both simple sequences and advanced sequenceswithin the same session.
 
 A channel steps through a sequence without any interaction between the host systemand NI-DCPower. Because the host system is not involved in executing the changesbetween steps of the sequence, the changes between steps in a sequence aredeterministic.
@@ -917,8 +814,6 @@ A channel steps through a sequence without any interaction between the host syst
 # Sequence Step Delta Time
 
 The PXIe-4135 supports configurable step duration for sequences through theSequence Step Delta Time property.
-
-![](images/9369155455bcb0eb30733beef98a09e66a7c566788212a08a65e1d8e38a28979.jpg)
 
 
 Note Sequence step delta time is supported with only DC voltage and DCcurrent outputs; it is not supported with pulse voltage and pulse currentoutputs.
@@ -929,6 +824,7 @@ In Sequence Source Mode, you can use either simple sequencing or advancedsequenc
 
 <table><tr><td>Task</td><td>Simple Sequencing</td><td>Advanced Sequencing</td></tr><tr><td>How to create</td><td>Set the Source Mode to Sequence and use the Set Sequence function</td><td>Set the Source Mode to Sequence; use the Create Advanced Sequence With Channels function, related advanced sequencing functions, and individual NI-DCPower properties</td></tr><tr><td>What you can configure</td><td>Voltage or current levels per step of the sequence, along with Source Delay for each step</td><td>A wide variety of NI-DCPower properties per step of the sequence</td></tr><tr><td>Channels the sequence applies to</td><td>·LabVIEW NXG: single channel only
 ·Other environments: any number of channels</td><td>Any number of channels</td></tr><tr><td>Controlling the initial state</td><td>Manually configure the channel(s) before calling the Set Sequence function</td><td>You can create a Commit step to configure channels to a known state before the sequence runs</td></tr><tr><td>Importing and exporting sequences</td><td>No capability</td><td>Can be transferred between sessions with the Export Attribute Configuration and Import Attribute Configuration functions</td></tr></table>
+
 
 Note You cannot program both simple sequences and advanced sequenceswithin the same session.
 
@@ -1108,17 +1004,9 @@ You can configure each named trigger in NI-DCPower to operate based on a digital
 
 
 Figure 15. Digital Edge Trigger
-```mermaid
-graph TD
-    High[High Level] --- Fall{ }
-    Fall -->|Falling Edge| Low[Low Level]
-    Low --- Rise{ }
-    Rise -->|Rising Edge| High2[High Level]
 
-    style High fill:#e1f5fe,stroke:#01579b
-    style High2 fill:#e1f5fe,stroke:#01579b
-    style Low fill:#ffebee,stroke:#b71c1c
-```
+
+![](images/cb2f2668718c6339252511fb09e48bab729fbfbdf6ab3e8ec72c3dac61473f5c.jpg)
 
 
 The channels may be on the same or different physical instruments. If they are ondifferent physical instruments, NI-DCPower routes the signal over the PXI backplanetrigger lines.
@@ -1263,6 +1151,7 @@ The PXIe-4135 automatically acquires measurements when you configure thefollowin
 These measurements are automatically acquired by coercing the niDCPower MeasureWhen property to Automatically After Source Complete or theNIDCPOWER_ATTR_MEASURE_WHEN attribute toNIDCPOWER_VAL_AUTOMATICALLY_AFTER_SOURCE_COMPLETE. To fetch thesemeasurements, call the niDCPower Fetch Multiple VI or the niDCPower_FetchMultiplefunction. NI-DCPower returns the measurement values in an array.
 
 
+
 Note If you want the measure unit to operate independently of the sourceunit in this context, set the niDCPower Measure When property or theNIDCPOWER_ATTR_MEASURE_WHEN attribute to a value other thanAutomatically After Source Complete orNIDCPOWER_VAL_AUTOMATICALLY_AFTER_SOURCE_COMPLETE.
 
 # Cease Generation
@@ -1271,7 +1160,6 @@ NI-DCPower includes different options for stopping generation on PXIe-4135 chann
 
 <table><tr><td>Option</td><td>How To</td><td>Description</td></tr><tr><td>Disabling the output</td><td>Set the Output Enabled property to False</td><td>Generates 0 V on a channel. ±2% of the current limit range presently configured for the channel remains on the channel.</td></tr><tr><td>Disconnecting the output</td><td>Set the Output Connected property to False</td><td>Disconnects a physical relay on a channel that completely interrupts generation on the channel.</td></tr></table>
 
-![](images/0317699666ad7fa589347bcbfc1077a412832031d4271be622d06f9ab4da1026.jpg)
 
 
 Note To avoid excessive relay wear, do not set Output Connected to Truewith a non-zero voltage connected to the output.
@@ -1289,6 +1177,7 @@ When you enable a previously disabled channel, levels and limits are applied to 
 • Current output functions—The programmed current level and voltage limit areapplied to the channel(s)
 
 You can use the Configure Output Enabled function to toggle the output of aninstrument.
+
 
 Tip To ensure the output is disabled on the hardware, after using theConfigure Output Enabled function or Output Enabled property, use the WaitFor Event With Channels function. This function waits for the Source
 
@@ -1496,6 +1385,12 @@ A channel performs an operation corresponding to a trigger when the channel dete
 You can configure each named trigger in NI-DCPower to operate based on a digitaledge.
 
 
+Figure 15. Digital Edge Trigger
+
+
+![](images/8155e7bd9805ef15cb4c429d30bc6db27992fb23432c6b22380fde85e291e770.jpg)
+
+
 The channels may be on the same or different physical instruments. If they are ondifferent physical instruments, NI-DCPower routes the signal over the PXI backplanetrigger lines.
 
 To configure a digital edge trigger, you must specify the input terminal that should beconnected to the trigger. The input terminal can be a physical trigger line or an outputterminal from another instrument or channel. If you specify an output terminal fromanother instrument, NI-DCPower automatically finds a route (if one is available) fromthat terminal to the input terminal via a physical PXI backplane trigger line.
@@ -1598,6 +1493,7 @@ You can synchronize multiple channels with NI-DCPower by routing signals—event
 You can export (route) the trigger and event signals to one of the physical PXIbackplane trigger lines using Export Signal With Channels.
 
 
+
 Tip You can use Wait For Event With Channels to make a channel wait to takean action until a specific event is generated.
 
 Instead of explicitly exporting signals to physical trigger lines, NI-DCPower canautomatically create routes for you. To have NI-DCPower automatically create routes,set the digital edge input terminal of one channel to be the event from anotherchannel.
@@ -1641,7 +1537,6 @@ These measurements are automatically acquired by coercing the niDCPower MeasureW
 NIDCPOWER_VAL_AUTOMATICALLY_AFTER_SOURCE_COMPLETE. To fetch thesemeasurements, call the niDCPower Fetch Multiple VI or the niDCPower_FetchMultiplefunction. NI-DCPower returns the measurement values in an array.
 
 
-
 Note If you want the measure unit to operate independently of the sourceunit in this context, set the niDCPower Measure When property or theNIDCPOWER_ATTR_MEASURE_WHEN attribute to a value other thanAutomatically After Source Complete orNIDCPOWER_VAL_AUTOMATICALLY_AFTER_SOURCE_COMPLETE.
 
 # Cease Generation
@@ -1668,8 +1563,6 @@ When you enable a previously disabled channel, levels and limits are applied to 
 • Current output functions—The programmed current level and voltage limit areapplied to the channel(s)
 
 You can use the Configure Output Enabled function to toggle the output of aninstrument.
-
-![](images/e4db2cfafee40c7b8d6a4de2476adb09811363da27bd750c48a1730544a15f40.jpg)
 
 
 Tip To ensure the output is disabled on the hardware, after using theConfigure Output Enabled function or Output Enabled property, use the WaitFor Event With Channels function. This function waits for the SourceComplete event before calling the Abort With Channels function to transitionthe session out of the Running state.
@@ -1753,17 +1646,7 @@ A battery is one example of a device that is capable of both sourcing and sinkin
 
 The following quadrant diagram graphically represents whether a particular channel issourcing or sinking power. Quadrants consist of the various combinations of positiveand negative currents and voltages. Quadrants I and III represent sourcing power,while Quadrants II and IV represent sinking power.
 
-```mermaid
-quadrantChart
-    title SMU Four-Quadrant Operation
-    x-axis "Negative Voltage (V-)" --> "Positive Voltage (V+)"
-    y-axis "Negative Current (I-)" --> "Positive Current (I+)"
-    quadrant-1 "Quadrant I: Source"
-    quadrant-2 "Quadrant II: Sink"
-    quadrant-3 "Quadrant III: Source"
-    quadrant-4 "Quadrant IV: Sink"
-
-```
+![](images/5a8a87e86d278b6be03695d94b6dee742d708dcba0326c619605fb5254bbaf13.jpg)
 
 
 For example, when you have a positive voltage and current flowing out of the positiveterminal (that is, a positive current), the output operation falls within Quadrant I and issourcing power. When you have a positive voltage and a current flowing into thepositive terminal (that is, a negative current), the output operation falls withinQuadrant IV, and is sinking power.
@@ -1865,7 +1748,6 @@ niDCPower_Configure_Output_Resistance function to set the outputresistance. Refe
 
 The PXIe-4135 is protected against overcurrent (OCP) conditions and overvoltage(OVP) conditions.
 
-
 Note Refer to NI-DCPower Overload Protection Error (OLP) Codes for moreinformation about these NI-DCPower errors.
 
 # Overcurrent Protection (OCP)
@@ -1929,6 +1811,12 @@ In reference to power supplies and SMUs, transient response describes how a supp
 Changes in load current, such as a current pulse, can cause large voltage transients.The transient response specifies how long it takes before the transients recover. Thefollowing figure shows how the transient behavior is typically specified. The transientresponse time specifies how quickly the supply can recover to within a certain voltage$( \Delta \pmb { \ V } )$ when a specific change in load $( \Delta \pmb { I } )$ occurs. Some power supplies also specify amaximum transient voltage dip under the same load conditions.
 
 
+Figure 16. Transient Response
+
+
+![](images/86209b04aa1b3fa9ed76383084a03bfa5e957b2164fe2c9f96e04cd0e11e6bdf.jpg)
+
+
 There is a trade-off between transient response and the stability of the supply under awide variety of loads. To achieve the fastest transient response, an instrument shouldhave a high gain-bandwidth (GBW) product, but the higher GBW is, the more likely it isthat the instrument will become unstable with certain loads. Thus, most instrumentscompromise performance to achieve stability under most conditions. Otherinstruments allow a degree of customization to enable optimization of performanceunder different circumstances.
 
 # Configuring Transient Response
@@ -1961,7 +1849,6 @@ Table 13. Compensation Parameters
 10 Hz to 20 MHz</td></tr><tr><td>Compensation Frequency</td><td>Both</td><td>Set the geometric mean of the pole frequency and the zero frequency. It is the frequency of maximum phase shift caused by the pole-zero pair.
 20 Hz to 20 MHz</td></tr><tr><td>Pole-Zero Ratio</td><td>Both</td><td>Set the ratio of the pole frequency to the zero frequency. A lag compensator has a pole-zero ratio set to a value less than 1.0, and a lead compensator has a pole-zero ratio set to a value greater than 1.0. If the pole-zero ratio is set to exactly 1.0, the pole and zero cancel each other and have no effect. You can set the pole-zero ratio to any value between 0.125 and 8.0.</td></tr></table>
 
-
 Tip To begin customizing the transient response for your application, youcan set Transient Response to Slow, Normal, or Fast and read thecompensation parameters. This will provide you with a good starting point
 
 from which you can derive your custom settings.
@@ -1981,7 +1868,6 @@ In extreme situations, you may be able to parallel-connect multiple power supply
 Occasionally, an active load may pass a reverse current to the power supply or SMU.
 
 To avoid reverse current loads, use a bleed-off load to preload the output of thedevice. Ideally, a bleed-off load should draw the same amount of current from thedevice that an active load may pass to the power supply or SMU.
-
 
 
 Caution Power supplies not designed for four-quadrant operation maybecome damaged if reverse currents are applied to their output terminals.Reverse currents can cause the device to move into an unregulated modeand can damage the instrument. Refer to the PXIe-4135 Specificationsfor more information about channel capabilities.
@@ -2021,7 +1907,6 @@ Table 14. Supported Configurable Output Ranges for Each Device Channel
 When you configure an output range, if you request a range that differs from the rangesdescribed in the PXIe-4135 Specifications, NI-DCPower selects the highestresolution (smallest) range available that accommodates the requested range. Forexample, on a device with only ${ 2 0 } { \mathsf { m } } { \mathsf { A } }$ and $2 0 0 ~ \mathsf { m A }$ current limit ranges, if you request100 mA for the current range, NI-DCPower selects the 200 mA range.
 
 To change the range, the configured range must be able to accommodate theconfigured output value. For example, if the current limit range is 1 A and the currentlimit is $5 0 ~ \mathsf { m A }$ , changing the current limit range to 20 mA is not allowed because 50 mAis not possible in the new range.
-
 
 
 Note Changing current ranges implies a change in the shunts used tomeasure current. Under loaded conditions, particularly in constant currentmode, this will result in glitches at the output. In order to reduce the risk ofdamage to the DUT, the range change is designed so that the current may beless than programmed but not more.
@@ -2121,18 +2006,7 @@ The following figure shows normal weighting, with aperture times on the x-axis a
 Figure 17. Normal Noise Rejection
 
 
-```mermaid
-gantt
-    title Sample Aperture Times
-    dateFormat  X
-    axisFormat %s
-
-    section Relative Weighting
-    Sample 1 :0, 1
-    Sample 2 :1, 2
-    Sample 3 :2, 3
-    Sample 4 :3, 4
-```
+![](images/3440a68959cbee208ae90d6c1c5c8a41423213037cf35fb6c7a571941bb19427.jpg)
 
 
 The following figure shows the resulting noise rejection as a function of frequency,with multiples of 1 / Aperture Time on the x-axis and magnitude response, in dB, onthe y-axis.
@@ -2141,31 +2015,7 @@ The following figure shows the resulting noise rejection as a function of freque
 Figure 18. Normal Noise Rejection by Frequency
 
 
-```mermaid
-graph TD
-    %% Node Definitions
-    Start((0 dB)) -->|Main Lobe| N1[Null 1]
-    N1 -->|Side Lobe 1| P1(Peak: -13 dB)
-    P1 --> N2[Null 2]
-    N2 -->|Side Lobe 2| P2(Peak: -18 dB)
-    P2 --> N3[Null 3]
-    N3 -->|Side Lobe 3| P3(Peak: -21 dB)
-    P3 --> N4[Null 4]
-    N4 -->|Side Lobe 4| P4(Peak: -23 dB)
-    P4 --> N5[...]
-
-    %% Axis Labeling via Subgraph
-    subgraph X_Axis [Multiple of 1/ApertureTime]
-    N1 --- n1((1))
-    N2 --- n2((2))
-    N3 --- n3((3))
-    N4 --- n4((4))
-    end
-
-    %% Styling
-    style Start fill:#2e4d3e,color:#fff
-    style X_Axis fill:none,stroke-dasharray: 5 5
-```
+![](images/46386ad60c1e183c521b5c2e4f804444560d46b93271f3d7a5fd7100cdea7df4.jpg)
 
 
 The best frequency rejection is available only near integer multiples of
@@ -2182,39 +2032,7 @@ The following figure shows second-order weighting, with aperture times on the x-
 Figure 19. Second-Order Noise Rejection
 
 
-```mermaid
-graph LR
-    subgraph Time_Axis [Aperture Times]
-    T0((0)) --- T05((0.5)) --- T1((1)) --- T15((1.5)) --- T2((2))
-    end
-
-    subgraph Samples [Triangular Weighting]
-    S1[Sample 1]
-    S2[Sample 2]
-    S3[Sample 3]
-    end
-
-    %% Mapping Overlaps
-    T0 -->|Rise| S1
-    S1 -->|Peak| T05
-    T05 -->|Fall| S1
-    S1 --> T1
-
-    T05 -->|Rise| S2
-    S2 -->|Peak| T1
-    T1 -->|Fall| S2
-    S2 --> T15
-
-    T1 -->|Rise| S3
-    S3 -->|Peak| T15
-    T15 -->|Fall| S3
-    S3 --> T2
-
-    %% Styling
-    style S1 fill:#f96,stroke:#333
-    style S2 fill:#6cf,stroke:#333
-    style S3 fill:#f96,stroke:#333
-```
+![](images/71373f43e9ee19100d63283b2f51356fb8243810aa5bc211dcdf60adc2b5cec0.jpg)
 
 
 The following figure shows the resulting noise rejection as a function of frequency,with multiples of 1 / Aperture Time on the x-axis and magnitude response, in dB, onthe y-axis.
@@ -2222,32 +2040,8 @@ The following figure shows the resulting noise rejection as a function of freque
 
 Figure 20. Second-Order Noise Rejection by Frequency
 
-```mermaid
-graph TD
-    %% Magnitude Response for Triangular Aperture
-    Peak((0 dB)) -->|Main Lobe| N1[Null 1: x=2]
-    
-    N1 -->|Side Lobe 1| P1(Peak: ~ -26 dB)
-    P1 --> N2[Null 2: x=4]
-    
-    N2 -->|Side Lobe 2| P2(Peak: ~ -35 dB)
-    P2 --> N3[Null 3: x=6]
-    
-    N3 -->|Side Lobe 3| P3(Peak: ~ -41 dB)
-    P3 --> N4[Null 4: x=8]
-    
-    N4 -->|Side Lobe 4| P4(Peak: ~ -46 dB)
-    P4 --> N5[Null 5: x=10]
 
-    subgraph Observations [Key Differences]
-    Direction[Nulls occur at EVEN multiples]
-    Drop[Side lobes decay at double the rate]
-    end
-
-    %% Styling
-    style Peak fill:#1a3326,color:#fff
-    style Observations fill:#f5f5f5,stroke:#333
-```
+![](images/a7c2650010c87b13270c81ebb928de6368ef96b6182233cc98e325bdcb2776e6.jpg)
 
 
 With second-order noise rejection, the instrument provides superior noise rejectioneven near multiples of 1 / Aperture Time, and noise rejection increases more rapidlywith frequency compared to normal noise rejection. Notches are also wider than theywould be with normal weighting, which results in less sensitivity to slight variations innoise frequency.
@@ -2290,6 +2084,7 @@ Complete the following steps to reject AC noise frequencies by adjusting the ape
 
 <table><tr><td>Noise Rejection Profile</td><td>Power Line Frequency</td><td>Target Aperture Time (PLC)</td></tr><tr><td rowspan="2">Normal (default)</td><td>60 Hz</td><td>Aperture Time = 60 Hz / f</td></tr><tr><td>50 Hz</td><td>Aperture Time = 50 Hz / f</td></tr><tr><td rowspan="2">Second-Order</td><td>60 Hz</td><td>Aperture Time = 2 × (60 Hz / f)</td></tr><tr><td>50 Hz</td><td>Aperture Time = 2 × (50 Hz / f)</td></tr></table>
 
+
 Note Each NI-DCPower instrument supports discrete aperture times: aninstrument-specific minimum value and integer multiples of that value.When you set an unsupported aperture time, NI-DCPower coerces thevalue to the nearest longer supported value for your instrument.
 
 3. Configure the aperture time you calculated.
@@ -2305,7 +2100,6 @@ b. If using power line cycle units, provide the frequency of the AC power line f
 When enabled, sequence step delta time enforces a fixed time dt between thestart and end of steps in a simple or advanced sequence. This level of determinismallows you to, for example, create periodic voltage waveforms with supportedNI-DCPower instruments.
 
 
-
 Note The terms sequence step delta time and timed output modeare equivalent.
 
 The following figure illustrates using sequence step delta time to create two steps of aperiodic voltage waveform for two iterations, where:
@@ -2319,43 +2113,8 @@ The following figure illustrates using sequence step delta time to create two st
 
 Figure 21. Sequence Step Delta Time Source Model
 
-```mermaid
-sequenceDiagram
-    participant System as Sequence Engine
-    participant Source as Source (Voltage)
-    participant Measure as Measurement Unit
 
-    Note over System, Measure: Sequence Step Delta Time
-
-    System->>Source: Start Trigger Received
-    activate Source
-    Note right of Source: Source Delay (0)
-    Source-->>System: Emit Source Complete
-    
-    System->>Measure: Trigger Measurement
-    activate Measure
-    Note right of Measure: Measure
-    Measure-->>System: Emit Measure Complete
-    deactivate Measure
-    
-    System->>System: Emit Exported Source Trigger
-    
-    Note over System, Measure: Next Sequence Step
-    
-    Source->>Source: Transition to Voltage Level (1)
-    Note right of Source: Source Delay (1)
-    Source-->>System: Emit Source Complete
-    deactivate Source
-    
-    System->>Measure: Trigger Measurement
-    activate Measure
-    Note right of Measure: Measure
-    Measure-->>System: Emit Measure Complete
-    deactivate Measure
-
-    System->>System: Emit Exported Sequence Advance Trigger
-    System-->>System: Emit Sequence Engine Done
-```
+![](images/5e9e9a21536098b555624c44d1bc0e06c593c27ca3f42ae9ec86dd80766c3320.jpg)
 
 
 When an NI-DCPower instrument uses sequence step delta time, the source unitoperates according to the following steps:
@@ -2377,9 +2136,11 @@ b. The measure unit generates a Measure Complete event.
 5. Once the sequence step delta time elapses, the source unit exports the Sourcetrigger, and the next step of the sequence begins.
 
 
+
 Note The source unit exports the Sequence Advance trigger on the firststep of any subsequent sequence iterations.
 
 6. The sequence iterates until completion.
+
 
 
 Note The sequence step dt does not apply to the final step of the finaliteration of a sequence.
@@ -2387,8 +2148,6 @@ Note The sequence step dt does not apply to the final step of the finaliteration
 You can enable sequence step delta time with the Sequence Step dt Enabled propertyand specify the dt itself with the Sequence Step dt property.
 
 The PXIe-4135 supports configurable step duration for sequences via the SequenceStep Delta Time property.
-
-
 
 Note Sequence step delta time is supported with only DC voltage outputs; itis not supported with pulse voltage and pulse current outputs.
 
@@ -2399,6 +2158,7 @@ Use sequence step delta time to control the duration of each step of a sequence 
 Configure the following properties to apply sequence step delta time to a sequence:
 
 1. Set the Source Mode property to Sequence.
+
 
 
 Note Sequence step delta time does not apply in Single Point sourcemode.
@@ -2456,29 +2216,9 @@ The following figure illustrates how the dt you specify interacts with a sequenc
 
 Figure 22. Sequence Step Delta Time in NI-DCPower Sequences
 
-```mermaid
-gantt
-    title Sequence Step Execution Timeline
-    dateFormat  X
-    axisFormat %s
 
-    section Step 1
-    Source Generation      :active, a1, 0, 10
-    Source Delay           :a2, after a1, 10
-    Measurement Time       :a3, after a2, 15
-    Waiting for dt         :crit, a4, after a3, 10
-    
-    section Triggers
-    Start Trigger Received :milestone, m1, 0, 0
-    Source Complete        :milestone, m2, 20, 0
-    Measure Complete       :milestone, m3, 35, 0
-    Exported Source Trigger:milestone, m4, 45, 0
+![](images/ed3ca7fe13baeabb8d15d01a75318a71b447dca65a1f4d51d41b60f047326ae7.jpg)
 
-    section Step 2
-    Source Generation      :active, b1, 45, 10
-    Source Delay           :b2, after b1, 10
-    Measurement Time       :b3, after b2, 15
-```
 
 # Note the following:
 
@@ -2592,6 +2332,7 @@ niDCPower_MeasureMultiple function to measure the actual current beingdelivered 
 
 When measuring low-value resistances, thermal voltages may introduce significantoffsets into the resistance measurement path. If an offset voltage exists in series withthe resistance to be measured, as in the following figure, taking a secondmeasurement at a different current output setpoint allows the offset to be accountedfor in the resistance calculation.
 
+![](images/7ac2d6efcba61f354510a330d7f559e9b4d1052b3a5fb4f0b62e81e30a6d80a6.jpg)
 
 
 The two test currents, $\boldsymbol { I } _ { 1 }$ and $^ { I _ { 2 } , }$ create voltage drops of $\nu _ { 1 }$ and $V _ { 2 } ,$ respectively. Thus,the following two equations can be derived:
@@ -2644,7 +2385,6 @@ Programming a channel to exceed one of these maximum thresholds while theinterlo
 
 You should design your safety system so that the safety interlock terminal is openwhen the output connections are accessible.
 
-
 Note Be aware of any other voltage sources in your test system that exceedthe safety interlock thresholds in your test system and of capacitance thatcould remain charged at hazardous voltages in the system, and take theappropriate safety precautions. The safety interlock of NI-DCPowerinstruments protects operators only from voltages generated by theinstrument, not from voltages external to the instrument that may be presentin systems.
 
 Once integrated into the overall safety interlock system, you can use the NI-DCPowerAPI, which controls NI SMUs, to use the detected state of the safety interlock as part ofyour program.
@@ -2679,9 +2419,7 @@ Consult the following to set up a safety interlock system for your NI-DCPowerins
 The safety interlock circuit limits the outputs of the PXIe-4135 to a safe state,regardless of the programmed state of the instrument. To make use of thisfunctionality, you must incorporate the instruments into an appropriate enclosuresystem that follows all provided guidelines.
 
 
-
 Caution Hazardous voltages of up to the maximum voltage of the PXIe-4135may appear at the output terminals if the safety interlock terminal is closed.Open the safety interlock terminal when the output connections areaccessible. With the safety interlock terminal open, the output voltage level/limit is limited to ±40 V DC, and protection will be triggered if the voltagemeasured between the device HI and LO terminals exceeds$\pm ( 4 2 \lor \mathsf { p e a k } \pm 0 . 4 \lor )$ .
-
 
 Notice Do not apply voltage to the safety interlock connector inputs. Thesafety interlock connector is designed to accept passive, normally open,contact closure connections only.
 
@@ -2750,30 +2488,8 @@ For example, the following figure illustrates a typical safety interlock circuit
 
 Figure 23. Archetypal Safety Interlock System Design
 
-```mermaid
-graph LR
-    subgraph Connector [4-Pin Connector 5]
-        P1((Pin 1))
-        P2((Pin 2))
-        P3((Pin 3))
-        P4((Pin 4))
-    end
 
-    subgraph Internal_Circuit [Safety Board 6]
-        SW1{Switch 8}
-        SW2{Switch 8}
-        Locker[Interlock/Doors 7]
-    end
-
-    %% Wiring Path
-    P1 --- SW1
-    SW1 --- SW2
-    SW2 --- P2
-
-    %% Logic Note
-    classDef switch fill:#fff,stroke:#333,stroke-width:2px;
-    class SW1,SW2 switch;
-```
+![](images/a0b526c0604176f958e960949b49c6999e86c9ec073f8583af332d1147f6e23e.jpg)
 
 
 1. Safety interlock input
@@ -2848,6 +2564,7 @@ c. Wire the cable to the test system enclosure at the user access points asinstr
 
 NI recommends the 8 in. cable for a distance of one to four chassis slots, and the 48in. cable for four or greater chassis slots or connecting to another chassis.
 
+
 Note If you use a 48 in. cable, measure and strip the cable as listed in the
 
 previous step. You can cut and strip 48 in. cables to shorter lengths asappropriate for your system.
@@ -2857,6 +2574,13 @@ a. Connect the red safety interlock signal wire from a second interlock cable in
 b. Connect the black safety interlock ground wire from a second interlock cableinto pin 4 on the first interlock connector.
 
 c. Repeat with additional cables until you have connected enough safetyinterlock connectors for as many instruments as you need.
+
+
+Figure 24. Safety Interlock Pass-Thru Connection
+
+
+![](images/0eff7e03a30f219091de873a3aedba14f0d15a88f1ef73036cfc5639005a9188.jpg)
+
 
 6. After inserting all of the cables, inspect for loose strands.
 
@@ -2880,7 +2604,6 @@ You can make safety interlock connections with any unshielded twisted-pair cabli
 
 • Conductor type: solid or multi-stranded
 
-
 Note If you are using multi-stranded cabling, twist the strands togetherbefore insertion. NI recommends stripping and tinning multi-strandedconductors before insertion for additional reliability.
 
 For generic cabling, use the safety interlock input connector included in the kit foryour instrument to join the cabling to the instrument front panel(s). Identify the pins ofthe connector with the following figure.
@@ -2889,28 +2612,7 @@ For generic cabling, use the safety interlock input connector included in the ki
 Figure 25. Safety Interlock Input Connector Pinout
 
 
-```mermaid
-graph TD
-    subgraph Connector_Face [Interlock Connector Pinout]
-        direction TB
-        subgraph Input_Pair [Control Signals]
-            P1[Safety Interlock Input] --- P3[Safety Interlock Pass Thru, Input]
-        end
-        subgraph Ground_Pair [Reference Signals]
-            P2[Safety Interlock Ground] --- P4[Safety Interlock Pass Thru, Ground]
-        end
-    end
-
-    %% Connection Logic
-    linkStyle 0 stroke:#ffcc00,stroke-width:4px;
-    linkStyle 1 stroke:#228b22,stroke-width:4px;
-
-    %% Styling
-    style P1 fill:#fff8dc,stroke:#ffcc00
-    style P3 fill:#fff8dc,stroke:#ffcc00
-    style P2 fill:#f0fff0,stroke:#228b22
-    style P4 fill:#f0fff0,stroke:#228b22
-```
+![](images/f4efa62525fda37dc07f5a40277d022af4cfe8eb04211004d9f853765233796e.jpg)
 
 
 Complete the following steps to connect the safety interlock subsystem with genericcabling.
@@ -2946,6 +2648,12 @@ b. Connect the black safety interlock ground wire from a second interlock cable
 into pin 4 on the first interlock connector.
 
 c. Repeat with additional cables until you have connected enough safetyinterlock connectors for as many instruments as you need.
+
+
+Figure 26. Safety Interlock Pass-Thru Connection
+
+
+![](images/976e24a4b6b1e99196efcfe24ae0fc6b6915c8c6f52cdccb06b5971a1bd7b6b1.jpg)
 
 
 7. After inserting all of the cables, inspect for loose strands.
@@ -3075,6 +2783,7 @@ Complete the following steps to resolve a detected sense lead error:
 Refer to the following terms when learning more about the features and usage of thePXIe-4135:
 
 • Aperture Time—The period during which an ADC reads the voltage or current on apower supply or SMU. Aperture time can be specified in seconds (s) or power linecycles (PLCs). Measurement resolution, measurement speed, and frequencyrejection are all functions of aperture time.
+
 
 
 Tip Select longer aperture times to improve measurement resolution;select shorter aperture times to increase the measurement speed.

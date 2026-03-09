@@ -1,4 +1,4 @@
-# PXIe-4163 UserManual
+# PXIe-4163 User Manual
 
 The PXIe-4163 User Manual provides detailed descriptions of the product functionalityand the step by step processes for use.
 
@@ -33,6 +33,18 @@ The PXIe-4163 is a high-precision system source measure unit (SMU) that has thef
 • SourceAdapt technology
 
 
+Figure 1. PXIe-4163 Quadrant Diagram
+
+
+![](images/7d84e4001a3821a764e09e8b77092b9a2624a4a5649e784520d23bc74ab242a5.jpg)
+
+
+
+Legend
+
+
+![](images/e855f04a92564716d36c9046b52aaf4b18e8eedf46fc46ab5bce4d8a4e177214.jpg)
+
 
 Valid on any channel in chassis with slot cooling capacity $\ge 5 8$ W.
 
@@ -53,8 +65,6 @@ Table 1. Earliest Driver Version Support
 # Components of a PXIe-4163 System
 
 The PXIe-4163 is designed for use in a system that includes other hardwarecomponents, drivers, and software.
-
-
 
 Notice A system and the surrounding environment must meet therequirements defined in PXIe-4163 Specifications.
 
@@ -81,7 +91,6 @@ Table 3. Cables and Accessories
 
 
 <table><tr><td>Accessory Description</td><td>Notes</td><td>Part Number</td></tr><tr><td>SHDB62M-DB62M-LL, 62 D-Sub Male to 62 D-Sub Male Low Leakage Cable for SMUs</td><td>1 m and 2 m lengths</td><td>142947-01/02</td></tr><tr><td>SHDB62M-BW-LL, 62 D-Sub Male to Bare Wire Male Low Leakage Cable for SMUs</td><td>1 m and 2 m lengths</td><td>142948-01/02</td></tr><tr><td>Screw Terminal Connector Kit for PXIe-4163 SMU</td><td>—</td><td>786985-01</td></tr><tr><td>PXIe-4163 Current and Open-Sense Protection Accessory</td><td>—</td><td>788404-01</td></tr><tr><td>PXIe-4163 Open-Sense Protection Accessory</td><td>—</td><td>787720-01</td></tr><tr><td>PXIe-416x Noise Filter Accessory</td><td>—</td><td>788163-01</td></tr><tr><td>PXI slot blockers</td><td>Set of 5</td><td>199198-01</td></tr></table>
-
 
 
 Note Visit NI SMU Cable and Accessory Compatibility at ni.com/r/cable-compatibility for more information about supported cables andaccessories for your instrument.
@@ -148,14 +157,34 @@ The PXIe-4163 includes flexible source and measurement units that enable multipl
 
 You can use hardware triggers in all modes. These triggers control source andmeasurement operations in coordination with other channels or devices in the system.The measurement engine supports waveform acquisition mode and can operateindependently from the sequence engine.
 
+# Block Diagram
+
+The following diagrams illustrate the design of the PXIe-4163.
+
+
+Figure 2. PXIe-4163 Block Diagram
+
+
+![](images/34b726f441964645e346b8e5cd5dc3829871b7eb460746a2cb7e9ead8dc18e97.jpg)
+
+
+
+Figure 3. PXIe-4163 Channel-Level Block Diagram
+
+
+![](images/648b6b06341310efdeeffddbf2ca253ed554ece4266e5dbd19930168f97c4926.jpg)
+
 
 # PXIe-4163 F-4163 Front Panel
+
 
 Note In this document, the PXIe-4163 (10 pA) and PXIe-4163 (100 pA) arereferred to inclusively as the PXIe-4163. Content in this document applies toall versions of the PXIe-4163 unless otherwise specified. The PXIe-4163(10 pA) shows PXIe-4163 24-CH 10pA SMU, and the PXIe-4163 (100 pA)shows PXIe-4163 24-CH Precision SMU on the front panel.
 
 
 Figure 4. PXIe-4163 Front Panel
 
+
+![](images/b26cbfe9da7c2c72f3127cc95e3c3297951e4e028edf2e3e592b308c9cf01379.jpg)
 
 
 1. Access LED
@@ -171,39 +200,8 @@ The following figure shows the terminals on the PXIe-4163 connector.
 
 Figure 5. PXIe-4163 Pinout
 
-```mermaid
-classDiagram
-    direction LR
-    class Connector62Pin {
-        +Pin 21: Calibration HI
-        +Pin 10: Output LO (CH0-23)
-    }
 
-    class Bundle_A {
-        CH0, CH1, CH2, CH3, CH4, CH5
-        Common: Sense LO (CH0-5)
-    }
-
-    class Bundle_B {
-        CH6, CH7, CH8, CH9, CH10, CH11
-        Common: Sense LO (CH6-11)
-    }
-
-    class Bundle_C {
-        CH12, CH13, CH14, CH15, CH16, CH17
-        Common: Sense LO (CH12-17)
-    }
-
-    class Bundle_D {
-        CH18, CH19, CH20, CH21, CH22, CH23
-        Common: Sense LO (CH18-23)
-    }
-
-    Connector62Pin --|> Bundle_A
-    Connector62Pin --|> Bundle_B
-    Connector62Pin --|> Bundle_C
-    Connector62Pin --|> Bundle_D
-```
+![](images/1890e8034f720742d2df06c6ae5ac24a9b404efba88ad74f5f537307431593ea.jpg)
 
 
 
@@ -247,12 +245,13 @@ Applying external signals while the module is powered off may causedamage.
 3. Remove the module from the chassis and inspect it for damage.
 
 
-
 Notice Do not reinstall a damaged module.
 
 4. Install the module in a different, supported slot within the same PXI chassis.
 
 5. Power on the chassis.
+
+
 
 Note If you are using a PC with a device for PXI remote control system,power on the chassis before powering on the computer.
 
@@ -302,13 +301,14 @@ Notice To prevent electrostatic discharge (ESD) from damaging the device,ground 
 2. Remove the device from the package and inspect the device for loose componentsor any other sign of damage.
 
 
-
 Notice Never touch the exposed pins of connectors.
+
 
 
 Note Do not install a device if it appears damaged in any way.
 
 3. Unpack any other items and documentation from the kit.
+
 
 
 Note Store the device in the antistatic package when the device is not in use.
@@ -317,6 +317,32 @@ Note Store the device in the antistatic package when the device is not in use.
 
 Refer to the following figure to identify the contents of the PXIe-4163 kit.
 
+
+Figure 6. PXIe-4163 Kit Contents
+
+
+![](images/bd23ac1b6ed288e5a6e77278cffbf7d2ad5bac01d25551585ee02e1a438c3e30.jpg)
+
+
+![](images/7e98e2f11d624475a7783514db583287c55b7d7a8ae209772d1bad6919b8e688.jpg)
+
+
+
+2
+
+
+![](images/c2ee618244f8e10634b49e47227e9306162fa036b1adc072a5c778d4a45c963f.jpg)
+
+
+
+3
+
+
+![](images/e81bd1f506cefde532dd3ca7930627b733727f01c8c093b6e6fc6ec7178f90f3.jpg)
+
+
+
+4
 
 
 1. PXIe-4163 Module
@@ -337,6 +363,7 @@ You must be an Administrator to install NI software on your computer.
 
 3. Follow the instructions in the installation prompts.
 
+![](images/35f6e58fa17a701b649bb54596768c2a48bc62b9262ba69ff4e7b09ff72ecb10.jpg)
 
 
 Note Windows users may see access and security messages duringinstallation. Accept the prompts to complete the installation.
@@ -345,6 +372,7 @@ Note Windows users may see access and security messages duringinstallation. Acce
 
 # Installing the PXIe-4163 into a Chassis
 
+![](images/da90b7b863cefccb9fe089f3e0a821568a40486eec539f52b16928698daf6d66.jpg)
 
 
 Notice To prevent damage to the PXIe-4163 caused by ESD orcontamination, handle the module using the edges or the metal bracket.
@@ -366,6 +394,12 @@ Notice To prevent damage to the PXIe-4163 caused by ESD orcontamination, handle 
 8. Ensure that the ejector handle is in the downward (unlatched) position.
 
 
+Figure 7. Module Installation
+
+
+![](images/a1c24297707e8a982a84b9396283ba11ad327247b1d74ca9fefd1427a2413283.jpg)
+
+
 9. Place the module edges into the module guides at the top and bottom of thechassis. Slide the module into the slot until it is fully inserted.
 
 10. Latch the module in place by pulling up on the ejector handle.
@@ -376,7 +410,6 @@ Notice To prevent damage to the PXIe-4163 caused by ESD orcontamination, handle 
 Note Tightening the top and bottom mounting screws increasesmechanical stability and also electrically connects the front panel to thechassis, which can improve the signal quality and electromagneticperformance.
 
 12. Cover all empty slots using either filler panels (standard or EMC) or slot blockerswith filler panels, depending on your application.
-
 
 
 Note For more information about installing slot blockers and fillerpanels, go to ni.com/r/pxiblocker.
@@ -405,7 +438,11 @@ achieve the following benefits:
 
 Complete the following steps to install the PXIe-4163 Current and Open-SenseProtection Accessory (NI part number 788404-01) with the corresponding PXIe-4163SMU.
 
+
+
 Notice This accessory is intended for use only with the correspondingPXIe-4163 SMU. Verify that the correct accessory model is attached to thePXIe-4163 SMU to ensure proper operation of all channels. Do not connectthe accessory to other device models.
+
+
 
 Notice To ensure that the accessory is detected accurately in configurationsoftware you must reboot the chassis after installing or uninstalling theaccessory.
 
@@ -419,6 +456,9 @@ b. Tighten the screws on the front of the accessory until it is secured to thePX
 
 
 Figure 8. Current and Open-Sense Protection Accessory Connected to a SMU
+
+
+![](images/118d7a047d6adbfd3200676794f659af81c0f8b848aba3481e447afeebb1be7e.jpg)
 
 
 3. Connect a compatible cable or connectivity accessory to the PXIe-4163 Currentand Open-Sense Protection Accessory.
@@ -451,18 +491,17 @@ b. Tighten the screws on the front of the accessory until it is secured to thePX
 Figure 9. Open-Sense Protection Accessory Connected to a SMU
 
 
+![](images/eb6d4c419b8c4d0d1d1177c907981796a572f937132eb26ea7ae949c4025a325.jpg)
+
 
 2. Connect a compatible cable or connectivity accessory to the PXIe-4163 Open-Sense Protection Accessory.
 
 3. Power on the chassis.
 
-
 Note Low energy transients can appear at the output terminals of yourPXIe-4163 during certain situations, such as power-up, power-down,device driver loading, and self-calibration.
 
 
 Note Refer to PXIe-416x Open-Sense Protection Accessory formore information.
-
-
 
 Note Visit ni.com/r/ni-smus-test-ic-in-sockets tor best practices whenusing NI SMUs to test ICs in sockets.
 
@@ -484,13 +523,19 @@ b. Tighten the screws on the front of the accessory until it is secured to thePX
 Figure 10. Noise Filter Accessory Connected to a SMU
 
 
+![](images/2e6f69441210b1899166cca66fdd216eb4861ab3b72b43addaf71a19085a497c.jpg)
+
 
 2. Connect a compatible cable or connectivity accessory to the PXIe-416x Noise FilterAccessory.
 
 3. Power on the chassis.
 
+![](images/2911a3075a7750ac4b8855385b358680b6871f099845dcd43d7cf5c26bafdc98.jpg)
+
 
 Note Low energy transients can appear at the output terminals of yourPXIe-4163 during certain situations, such as power-up, power-down,device driver loading, and self-calibration.
+
+![](images/baf0cfa64e15a91eea3f999d5cafb63c65228ece3526fb51fcc512ddcf3f0d78.jpg)
 
 
 Note Refer to the PXIe-416x Noise Filter Accessory User Guide formore information.
@@ -502,7 +547,6 @@ Note Refer to the PXIe-416x Noise Filter Accessory User Guide formore informatio
 # Verifying the Ins erifying Installation in MA tion in MAX
 
 Use Measurement & Automation Explorer (MAX) to configure your NI hardware. MAXinforms other programs about which NI hardware products are in the system and howthey are configured. MAX is automatically installed with NI-DCPower.
-
 
 Note The PXIe-4163 (10 pA) appears in MAX as PXIe-4163 (10 pA) andthe PXIe-4163 (100 pA) appears in MAX as PXIe-4163.
 
@@ -537,7 +581,6 @@ Note If you do not see your module listed, press $\tt { < F 5 > }$ to refresh th
 
 a. Under an NI entry, confirm that a PXIe-4163 entry appears.
 
-
 Note If you are using a PC with a device for PXI remote controlsystem, under System Devices, also confirm that no error conditionsappear for the PCI-to-PCI Bridge.
 
 b. If error conditions appear, reinstall NI-DCPower.
@@ -566,11 +609,9 @@ complete self-calibration after you install the module.
 
 1. Install the PXIe-4163 and let it warm up for the recommended warm-up time listedin the PXIe-4163 Specifications.
 
-
 Note Warm up begins when the PXI chassis has been powered on andthe operating system has completely loaded.
 
 2. Self-calibrate the PXIe-4163 by clicking the Self-Calibrate button in MAX or callingniDCPower Cal Self Calibrate (niDCPower_CalSelfCalibrate).
-
 
 Note Specify all channels of your PXIe-4163 with the channel nameinput when calling niDCPower Cal Self Calibrate(niDCPower_CalSelfCalibrate). You cannot self-calibrate asubset of PXIe-4163 channels.
 
@@ -593,6 +634,8 @@ Local sense measurements use a single set of leads for output and voltagemeasure
 Figure 11. Connecting Signals for Local Sense MeasurementPower Supply/SMU Channel
 
 
+![](images/6337e4032b9979620ad25b8d40f3a5cc49fbbfbc6bab09951bb0cc7e680c38b7.jpg)
+
 
 When the PXIe-4163 is operating in Constant Voltage mode, local sense forces therequested voltage at the output terminals of the module. The actual voltage at theDUT terminals is lower than the requested output because of the output leadresistance error.
 
@@ -607,6 +650,11 @@ The output resistance of the source typically includes the effective resistance 
 If the source has remote sense capabilities and a 2-wire configuration needs to bemaintained, you can remove the effect of any protection circuitry in series with thesourcing path by configuring the channel for remote sense and connecting the senseterminals externally to their respective output terminals, as illustrated in the followingfigure.
 
 
+Figure 12. Connecting Local Sense Hardware with a Remote Sense Channel ConfigurationPower Supply/SMU Channel
+
+
+![](images/018dedc7eabbc61ad43690a5a79b00d9cb9165d4e3aa048ca190e416dbc2ed4d.jpg)
+
 
 # Making R Making Remote Sense Me e Sense Measurements
 
@@ -618,6 +666,11 @@ Figure 13. Connecting for a Remote Sense Measurement
 
 
 Power Supply/SMU Channel
+
+
+![](images/15257aac84222c2c4bc72b64b24d558c470974a01264613f5a0442779a80c446.jpg)
+
+
 
 Tip Using remote sense enables more accurate voltage output andmeasurements when the output lead voltage drop is significant.
 
@@ -647,8 +700,6 @@ To minimize voltage drop caused by cabling:
 • Use the thickest wire gauge appropriate for your application. NI recommends18 AWG or lower.
 
 To reduce noise picked up by the cables that connect the SMU to a load, twist eachwire pair. Refer to the following table to determine the wire gauge appropriate for yourapplication.
-
-
 
 
 Caution Use wire that is thick enough to avoid overheating if the outputcurrent from the power supply or SMU were to short circuit.
@@ -741,6 +792,7 @@ In Sequence Source Mode, you can use either simple sequencing or advancedsequenc
 <table><tr><td>Task</td><td>Simple Sequencing</td><td>Advanced Sequencing</td></tr><tr><td>How to create</td><td>Set the Source Mode to Sequence and use the Set Sequence function</td><td>Set the Source Mode to Sequence; use the Create Advanced Sequence With Channels function, related advanced sequencing functions, and individual NI-DCPower properties</td></tr><tr><td>What you can configure</td><td>Voltage or current levels per step of the sequence, along with Source Delay for each step</td><td>A wide variety of NI-DCPower properties per step of the sequence</td></tr><tr><td>Channels the sequence applies to</td><td>• LabVIEW NXG: single channel only
 • Other environments: any number of channels</td><td>Any number of channels</td></tr><tr><td>Controlling the initial state</td><td>Manually configure the channel(s) before calling the Set Sequence function</td><td>You can create a Commit step to configure channels to a known state before the sequence runs</td></tr><tr><td>Importing and exporting sequences</td><td>No capability</td><td>Can be transferred between sessions with the Export Attribute Configuration and Import Attribute Configuration functions</td></tr></table>
 
+
 Note You cannot program both simple sequences and advanced sequenceswithin the same session.
 
 Refer to the NI-DCPower examples in your application development environment tosee how you can program with simple sequences and advanced sequences.
@@ -772,6 +824,8 @@ The following diagram illustrates the design of the PXIe-4163 channel-level circ
 
 Figure 14. PXIe-4163 Channel-Level Block Diagram
 
+
+![](images/605c4fa3f7f93340d50297bfe317bd89b80e4deff3b0fe6167ced5347c18e664.jpg)
 
 
 # Related information:
@@ -990,6 +1044,12 @@ A channel performs an operation corresponding to a trigger when the channel dete
 You can configure each named trigger in NI-DCPower to operate based on a digitaledge.
 
 
+Figure 15. Digital Edge Trigger
+
+
+![](images/9547ad3b4316241279659ea325b48b2a8ff0f7a64ac602584746988928428a7e.jpg)
+
+
 The channels may be on the same or different physical instruments. If they are ondifferent physical instruments, NI-DCPower routes the signal over the PXI backplane
 
 trigger lines.
@@ -1070,6 +1130,7 @@ Accuracy: tens of nanoseconds $^ +$ NI-DCPower instrument trigger delay andjitte
 
 • External Triggering—Sends a signal external to a PXI chassis or, for otherinstrument form factors, to an instrument through I/O lines. The closer thesignal paths between instruments are in length, the better the synchronizationaccuracy. Time locking improves determinism.
 
+
 Note Most NI-DCPower instruments cannot receive external digital
 
 triggers via their front panels. However, for NI-DCPower instrumentsthat support triggering, you can send an external trigger to theinstrument through another instrument installed in your chassis thatdoes accept external triggers. You can route these trigger signalsthrough the trigger lines on the chassis backplane.
@@ -1081,6 +1142,7 @@ Refer to the PXIe-4163 Specifications for the trigger delay and jitter of yourin
 You can synchronize multiple channels with NI-DCPower by routing signals—eventsand triggers—from one channel to another, including channels that span multiplephysical instruments.
 
 You can export (route) the trigger and event signals to one of the physical PXIbackplane trigger lines using Export Signal With Channels.
+
 
 Tip You can use Wait For Event With Channels to make a channel wait to takean action until a specific event is generated.
 
@@ -1155,7 +1217,6 @@ When you enable a previously disabled channel, levels and limits are applied to 
 You can use the Configure Output Enabled function to toggle the output of aninstrument.
 
 
-
 Tip To ensure the output is disabled on the hardware, after using theConfigure Output Enabled function or Output Enabled property, use the WaitFor Event With Channels function. This function waits for the SourceComplete event before calling the Abort With Channels function to transitionthe session out of the Running state.
 
 # Disconnecting the Output
@@ -1163,7 +1224,6 @@ Tip To ensure the output is disabled on the hardware, after using theConfigure O
 You can open an internal relay in order to completely disconnect the Output HI andOutput LO and/or Sense terminals from the output connector of a channel.
 
 For example, you might disconnect the output if a battery is connected to an outputterminal in order to prevent the battery from discharging.
-
 
 Notice Only disconnect the output when it is necessary for your application.Excessive connecting and disconnecting of the output can cause prematurewear on the relay.
 
@@ -1223,6 +1283,7 @@ The following NI-DCPower example programs demonstrate common SMU and powersupply
 
 • NI-DCPower Measure Step Response—Demonstrates how to measure the outputwhile it is changing.
 
+
 Note PXI-4110 and PXI-4130 do not support the following NI-DCPowerexample programs:
 
 • NI-DCPower Hardware Timed Voltage Sweep
@@ -1245,16 +1306,6 @@ A battery is one example of a device that is capable of both sourcing and sinkin
 
 The following quadrant diagram graphically represents whether a particular channel issourcing or sinking power. Quadrants consist of the various combinations of positiveand negative currents and voltages. Quadrants I and III represent sourcing power,while Quadrants II and IV represent sinking power.
 
-```mermaid
-quadrantChart
-    title Power Quadrants (Voltage vs Current)
-    x-axis "Negative Voltage (V-)" --> "Positive Voltage (V+)"
-    y-axis "Negative Current (I-)" --> "Positive Current (I+)"
-    quadrant-1 "Quadrant I: Source"
-    quadrant-2 "Quadrant II: Sink"
-    quadrant-3 "Quadrant III: Source"
-    quadrant-4 "Quadrant IV: Sink"
-```
 
 
 For example, when you have a positive voltage and current flowing out of the positiveterminal (that is, a positive current), the output operation falls within Quadrant I and issourcing power. When you have a positive voltage and a current flowing into thepositive terminal (that is, a negative current), the output operation falls withinQuadrant IV, and is sinking power.
@@ -1331,7 +1382,6 @@ You can perform any of the following actions in NI-DCPower to decrease the impac
 
 Because there is no load in this example, it takes a significant change in DACsettings to cause a small change in output current. This condition means thatthe overall loop gain is low for current, and you can increase the current-modeGBW product to compensate without compromising stability. Setting current-mode GBW to the maximum value of 20 MHz reduces the output capacitanceand results in a substantial speed increase.
 
-
 Note The current ADC does not measure the current that charges the virtualoutput capacitance. Therefore, when the output slew rate is limited by theavailable charging current, that current may not be measured by the currentmeasurement circuitry.
 
 # Decreasing Output Inductance
@@ -1357,6 +1407,7 @@ niDCPower_Configure_Output_Resistance function to set the outputresistance. Refe
 # Overload Protection (OLP) tion (OLP)
 
 The PXIe-4163 is protected against overcurrent (OCP) conditions and overvoltage(OVP) conditions.
+
 
 
 Note Refer to NI-DCPower Overload Protection Error (OLP) Codes for moreinformation about these NI-DCPower errors.
@@ -1422,6 +1473,15 @@ In reference to power supplies and SMUs, transient response describes how a supp
 Changes in load current, such as a current pulse, can cause large voltage transients.The transient response specifies how long it takes before the transients recover. Thefollowing figure shows how the transient behavior is typically specified. The transientresponse time specifies how quickly the supply can recover to within a certain voltage$( \Delta \pmb { \ V } )$ when a specific change in load $( \Delta \pmb { I } )$ occurs. Some power supplies also specify amaximum transient voltage dip under the same load conditions.
 
 
+Figure 16. Transient Response
+
+
+![](images/c3db7aa34aa9229d271d77aad3a4e9dbdc00826480e7a9741da60ada43888021.jpg)
+
+
+![](images/ae2888a20f4822fd170d16edf683c15b83f736808e65aaf8020b7ffc758c64e3.jpg)
+
+
 There is a trade-off between transient response and the stability of the supply under awide variety of loads. To achieve the fastest transient response, an instrument shouldhave a high gain-bandwidth (GBW) product, but the higher GBW is, the more likely it isthat the instrument will become unstable with certain loads. Thus, most instrumentscompromise performance to achieve stability under most conditions. Otherinstruments allow a degree of customization to enable optimization of performanceunder different circumstances.
 
 # Configuring Transient Response
@@ -1475,12 +1535,7 @@ Occasionally, an active load may pass a reverse current to the power supply or S
 
 To avoid reverse current loads, use a bleed-off load to preload the output of thedevice. Ideally, a bleed-off load should draw the same amount of current from thedevice that an active load may pass to the power supply or SMU.
 
-
-
 Caution Power supplies not designed for four-quadrant operation maybecome damaged if reverse currents are applied to their output terminals.Reverse currents can cause the device to move into an unregulated modeand can damage the instrument. Refer to the PXIe-4163 Specificationsfor more information about channel capabilities.
-
-![](images/1c7059eeca5e51340165df0f5cb776004adf9bcf989850c0fb6d06a96af1451b.jpg)
-
 
 Note The sum of the bleed-off load current and the current supplied to theload must be less than the maximum current of the instrument.
 
@@ -1498,13 +1553,11 @@ To get maximum output and measurement accuracy, use the highest resolution
 
  Specifications for more information about what ranges are available for a particularchannel on your device.
 
-![](images/8816e91138a137dfc00250e513593538864eca133fbabb491d9b154a65f98645.jpg)
 
 
 Note NI-DCPower implicitly selects the measurement range that is based onthe output range that you configure. Thus, you cannot change themeasurement range independently of the output range. The measurementrange is large enough to measure any voltage or current within the outputrange that you configure.
 
 Ranges are the maximum possible value from zero that the range can output ormeasure (not including the overrange). For example, in the 20 mA current level range,the current level is configurable up to 20 mA.
-
 
 # Note
 
@@ -1529,13 +1582,11 @@ Table 12. Supported Configurable Output Ranges for Each Device Channel
 To change the range, ensure that the range you configure can accommodate theoutput value. For example, if the current limit range is 1 A and the current limit is$5 0 ~ \mathsf { m A }$ , changing the current limit range to ${ 2 0 } { \mathsf { m } } { \mathsf { A } }$ is not allowed because $5 0 ~ \mathsf { m A }$ is notpossible in the new range.
 
 
-
 Note Changing current ranges implies a change in the shunts that measurecurrent. Under loaded conditions, particularly in constant current mode, thisresults in glitches at the output. To reduce the risk of damage to the DUT, therange change is designed so that the current might be less than what youprogram but not more.
 
 Level and limit changes occur simultaneously when a range change is not required.The changes occur when you apply the channel configuration upon entering the
 
 Running state. However, changes do not occur simultaneously if a voltage or a currentrange change is involved.
-
 
 
 Tip When you change ranges in the Running state, the configuration takeseffect immediately. Ensure that you are aware of the order of the outputrange and the output value changes. To avoid ordering issues, NIrecommends configuring the output range and the output value in theUncommitted state and then transition to the Running state. Alternatively,you can enable autoranging for the range you want to change.
@@ -1549,7 +1600,6 @@ Enabling overranging for a particular channel extends voltage output capabilitie
 # Source Autorange
 
 When you enable source autorange by setting Source:OutputFunction, NI-DCPowerautomatically changes the output range based on the output setpoint that youconfigure. NI-DCPower automatically changes to the highest resolution (smallest)range that can accommodate the output value. You can selectively enable sourcevoltage level/limit and current limit/level autorange on a channel.
-
 
 
 Note While source autorange selects the best range based on the setpoint, itdoes not change the range until you program a new setpoint. Alternatively,you can use measurement autorange to allow the instrument to select thebest measurement range. Refer to Measurement Autorange for moreinformation.
@@ -1631,17 +1681,8 @@ The following figure shows normal weighting, with aperture times on the x-axis a
 
 Figure 17. Normal Noise Rejection
 
-```mermaid
-gantt
-    title Digital Sampling Aperture Windows
-    dateFormat  X
-    axisFormat %s
-    section Sampling
-    Sample 1 (Weight 0.5) :0, 1
-    Sample 2 (Weight 0.5) :1, 2
-    Sample 3 (Weight 0.5) :2, 3
-    Sample 4 (Weight 0.5) :3, 4
-```
+
+![](images/b4b8c16e2b7549c0c4c21cb89cbad82a32c6277b38db7bb9643aa68f91ac92ae.jpg)
 
 
 The following figure shows the resulting noise rejection as a function of frequency,with multiples of 1 / Aperture Time on the x-axis and magnitude response, in dB, onthe y-axis.
@@ -1650,13 +1691,7 @@ The following figure shows the resulting noise rejection as a function of freque
 Figure 18. Normal Noise Rejection by Frequency
 
 
-```mermaid
-xychart-beta
-    title "Magnitude Response (Sinc Filter Approximation)"
-    x-axis "Multiple of 1/ApertureTime" 0 --> 5
-    y-axis "Magnitude Response (dB)" -60 --> 0
-    line [0, -10, -60, -15, -60, -22, -60, -28, -60, -32]
-```
+![](images/6cea96f123429725daa96e1854c1485b0c17af0319655d70dba646fe43ed7eab.jpg)
 
 
 The best frequency rejection is available only near integer multiples of
@@ -1673,17 +1708,7 @@ The following figure shows second-order weighting, with aperture times on the x-
 Figure 19. Second-Order Noise Rejection
 
 
-```mermaid
-xychart-beta
- title "Relative weighting vs aperture time"
- x-axis "Aperture time" 0 --> 2
- y-axis "Relative weighting" 0 --> 1
-
- line "Sample 1" [0, 1, 0]
- line "Sample 2" [0, 1, 0]
- line "Sample 3" [0, 1, 0]
-
-```
+![](images/42175c9fed9ca540f88284c881f89e90714d4468cdfb2553059da6879da0a5a0.jpg)
 
 
 The following figure shows the resulting noise rejection as a function of frequency,with multiples of 1 / Aperture Time on the x-axis and magnitude response, in dB, onthe y-axis.
@@ -1692,13 +1717,7 @@ The following figure shows the resulting noise rejection as a function of freque
 Figure 20. Second-Order Noise Rejection by Frequency
 
 
-```mermaid
-xychart-beta
-    title "Magnitude Response (Triangular Weighting Approximation)"
-    x-axis "Multiple of 1/ApertureTime" 0 --> 10
-    y-axis "Magnitude Response (dB)" -80 --> 0
-    line [0, -6, -25, -80, -28, -38, -80, -42, -50, -80, -55]
-```
+![](images/224b49e4e4bb3e59b9edeea92a864ce94190122ddc4f43c355439b1b3013714a.jpg)
 
 
 With second-order noise rejection, the instrument provides superior noise rejectioneven near multiples of 1 / Aperture Time, and noise rejection increases more rapidlywith frequency compared to normal noise rejection. Notches are also wider than theywould be with normal weighting, which results in less sensitivity to slight variations innoise frequency.
@@ -1778,6 +1797,9 @@ niDCPower_MeasureMultiple function to measure the actual current beingdelivered 
 
 When measuring low-value resistances, thermal voltages may introduce significantoffsets into the resistance measurement path. If an offset voltage exists in series withthe resistance to be measured, as in the following figure, taking a secondmeasurement at a different current output setpoint allows the offset to be accountedfor in the resistance calculation.
 
+![](images/3c5c84fde66563ac66510de2f7fbdbc1cf4fd77bd9bb5e23d77cf4e42259645b.jpg)
+
+
 The two test currents, I1 and I2, create voltage drops of $\pmb { V _ { 1 } }$ and $V _ { 2 } ,$ respectively. Thus,the following two equations can be derived:
 
 • V1 = I1R + VOS
@@ -1809,6 +1831,8 @@ The PXIe-4163 supports merge counts of ×2, ×4, and $\times 8$ , each of which 
 • Merge configuration—The combination of channels included in the merge.
 
 The total current you can source from the SMU by merging channels is equal to themerge count times the normal per-channel maximum for the SMU. Refer tospecifications or documentation for your instrument for information on maximumsourcing power and current ranges.
+
+
 
 # Note
 
@@ -1878,6 +1902,7 @@ Otherwise, your application requires the use of an external switching circuitry.
 
 • If your application uses screw terminal connectivity, ensure that you are using thecorrect size wire for the Output HI and Output LO. The output current that youconfigure is distributed between the channels in the merge configuration.
 
+
 # Note
 
 • Connect only the channels that you intend to merge.
@@ -1895,10 +1920,11 @@ Before you program your SMU for merged channels using the NI-DCPower API, ensure
 You can use merged channels while the session is open to an arbitrary set ofchannels, as long as the primary channel is in the session.
 
 
-
 Note If you are using Initialize With Channels (deprecated), open thesession to only the primary channel.
 
 2. Depending on your merge configuration, use the Merged Channels property tospecify the required merge channels.
+
+
 
 Note You can enter the range of merge channels using commas, ahyphen, or a colon. For example, 1,2,3, 1:3, or 1-3. If you are using amulti-instrument session, you must specify the instrument name with
 
@@ -1909,12 +1935,9 @@ the merge channels in the following format:
 a. To configure properties on the primary channel in LabVIEW, write the ActiveChannel property to the primary channel.
 
 
-
 Note You do not need to configure any properties on the mergechannels that are part of a merge configuration. Configure propertiesonly on the primary channel.
 
 3. Use Commit With Channels to apply the merge configuration to the SMU.
-
-
 
 Note Call functions only on the primary channel. NI-DCPower returns anerror if you attempt to commit or initiate a merge channel.
 
@@ -1922,11 +1945,9 @@ Committing the session properties reserves the channels you specified for mergin
 
 4. Call Initiate With Channels to begin sourcing current according to the mergeconfiguration.
 
-
 Note To acquire measurements from the combined channels, call theniDCPower_MeasureMultiple function or theniDCPower_FetchMultiple function on the primary channel only.Attempting to call these measurement functions on the merge channelsreturns an error.
 
 The maximum current you can now source from your SMU in this merge configurationis equal to the merge count times the per-channel maximum of your instrument.
-
 
 Note If you have multiple active merge configurations on the sameinstrument (without any overlapping merge configurations that use the sameprimary and merge channels), you can configure properties or call functionson multiple primary channels simultaneously. You do not need to configureproperties or call functions on merge channels.
 
@@ -1945,6 +1966,7 @@ Note If you want to change the merge configuration, first disable theoutputs of 
 
 Merging channels of the PXIe-4163 impacts your instrument specifications as definedin the following sections.
 
+
 Note Specifications not mentioned in the following sections remain thesame and maintain the same classification (warranted, typical, etc.) asdescribed in the specifications document for your instrument.
 
 The calibration procedure for your instrument does not explicitly verify thespecifications for merged channels. The merged channel specifications are ensured bydesign and assume the following about your merge configuration:
@@ -1957,7 +1979,6 @@ The calibration procedure for your instrument does not explicitly verify thespec
 
 The Noise (0.1 Hz to 10 Hz, peak-to-peak, typical) specifications increase
 
-proportionally to the square root of the number of channels in the mergedconfiguration.
 
 
 Note Some instruments have a combined specification for resolution andlow frequency noise, while other instruments have individual specifications.Resolution is a loosely defined specification that does not lend itself well togeneralized quantitative guidelines.
@@ -2049,7 +2070,6 @@ The channels are now unreserved. You can now access the channels and configureth
 
 3. Call Commit With Channels on the channels that you intend to use.Committing the independent configuration unmerges the channels and appliesthe independent configuration.
 
-
 Note When you change the merge configuration upon calling CommitWith Channels, the outputs of all channels that were in the previousmerge configuration are disabled; this is equivalent to using ConfigureOutput Enabled to disable the outputs of those channels.
 
 The new merge configuration is applied at commit. You can use each channelindependently of the others (or in a new merge configuration), and each channelmight source current up to its normal per-channel or merged maximum. If the mergeconfiguration remains unchanged, the merged channels continue sourcing based ontheir previous configuration.
@@ -2071,6 +2091,7 @@ Terminal sources and destinations use the fully qualified terminal name/DeviceNa
 Refer to the following terms when learning more about the features and usage of thePXIe-4163:
 
 • Aperture Time—The period during which an ADC reads the voltage or current on apower supply or SMU. Aperture time can be specified in seconds (s) or power linecycles (PLCs). Measurement resolution, measurement speed, and frequencyrejection are all functions of aperture time.
+
 
 Tip Select longer aperture times to improve measurement resolution;select shorter aperture times to increase the measurement speed.
 
@@ -2143,7 +2164,6 @@ Refer to the PXIe-4163 Calibration Procedure for the external calibrationprocedu
 Use the self-calibration function to reduce errors caused by time and temperaturedrift. Self-calibration recalculates certain internal reference values, gains, and offsetsto significantly improve accuracy over the full operating temperature range of thedevice.
 
 When you run self-calibration, the output terminal is disconnected. Low-amplitude,low-energy glitches may appear at the output, but in most circumstances, theseglitches are not noticeable.
-
 
 Note Self-calibration is often used as the first step in debugging
 

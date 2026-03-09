@@ -1,5 +1,4 @@
-
-# PXIe-4135 Specifications
+# PXIe-4135Specifications
 
 These specifications apply to the PXIe-4135.
 
@@ -57,6 +56,9 @@ Caution Due to high-impedance circuits used in the hardware, care shouldbe taken
 
 # PXIe-4135 Pinout
 
+![](images/784e12fa0a3936cdeb6d333e86fcec41f45d9768b7db9110a548ca72cbf9d208.jpg)
+
+
 1. Access LED
 
 2. Voltage LED
@@ -84,10 +86,55 @@ Table 1. Current Source and Sink Ranges
 4. Current is limited to 1 A DC. Higher levels are pulsing only.
 
 
+Figure 1. Quadrant Diagram for PXIe-4135 (40W)
+
+
+![](images/cd8cfe3b06c4abed19ec7bb8a0cd1ad505cfadabcd59a66943f10da27466bf79.jpg)
+
+
+
+Legend
+
+
+![](images/7aec50ca1cb5b4fa1525106dcdd10ad475c09fc233df9a4e3e67f4ba37ead013.jpg)
+
+
+
+Pulse or DC, up to 40 W
+
+
+![](images/9f3f1f730becb15e852a8fbc81c8f4034f02ac62beb857b1f813667c0a905c55.jpg)
+
+
+
+Pulse only, up to 480 W
+
 
 For additional information related to the Pulse Voltage or Pulse Current settings of theOutput Function, for the PXIe-4135 (40W), including pulse on time and duty cycle limitsfor a particular operating point, refer to Pulsed Operation. For supplementaryexamples, refer to Examples of Determining Extended Range Pulse Parameters andOptimizing Slew Rate using NI SourceAdapt.
 
 
+Figure 2. Quadrant Diagram for PXIe-4135 (20W)
+
+
+![](images/74a502cf9f510f85ed2038499ef866239e73e82fa574834a66a83134d8c28a4c.jpg)
+
+
+# Legend
+
+![](images/34ed8a85c2b0df40a66645d3734e5889e2798206a5eb65bc2234dd31c57665ba.jpg)
+
+
+Pulse or DC
+
+![](images/9f6795d742cb5455821fae695e1c858b9caaec3c7c0d8e247f60cefd346bad7c.jpg)
+
+
+Pulse only, max. 1 ms, $5 \%$ duty cycle
+
+![](images/94848f13f99a061b0d108018c55170c8c7d43320fa833f95bf56eeb157ac2ba1.jpg)
+
+
+Pulse only, max. 400 µs, $2 \%$ duty cycle
 
 DC sourcing power and sinking power are limited to the values in the following table,regardless of output voltage. 5
 
@@ -170,17 +217,8 @@ The following figures illustrate measurement noise as a function of measurementa
 Figure 3. Voltage Measurement Noise vs. Measurement Aperture, Nominal
 
 
-```mermaid
-xychart-beta
-    title "Measurement Noise, RMS (Volts) vs. Aperture (Seconds)"
-    x-axis "Aperture (Seconds)" [1n, 10n, 100n, 1u, 10u, 100u, 1m, 10m, 100m]
-    y-axis "Noise (RMS Volts)" 0 --> 100000
-    
-    line "200 V Range" [100000, 90000, 60000, 20000, 3000, 250, 50, 25, 20]
-    line "20 V Range" [15000, 10000, 6000, 2000, 300, 60, 25, 6, 2.5]
-    line "6 V Range" [4000, 3000, 1500, 500, 80, 10, 2, 0.7, 0.6]
-    line "600 mV Range" [500, 400, 200, 60, 10, 1.2, 0.5, 0.15, 0.1]
-```
+![](images/5bc6dc2ba7f07eb0543f18fefe2fd0d67f413e313060422ffecb0fc6f5be248d.jpg)
+
 
 Note When the aperture time is set to 2 power-line cycles (PLCs),
 
@@ -191,49 +229,25 @@ measurement noise differs slightly depending on whether the Power LineFrequency 
 
 Figure 4. Current Measurement Noise vs. Measurement Aperture, Nominal
 
-```mermaid
-xychart-beta
-    title "Measurement Noise, RMS (Amps) vs. Aperture (Seconds)"
-    x-axis "Aperture (Seconds)" [1u, 10u, 100u, 1m, 10m, 100m]
-    y-axis "Noise (RMS Amps - Log Scaled Units)" 0 --> 1000000
-    
-    line "3 A Range" [800000, 200000, 25000, 8000, 3000, 1000]
-    line "1 A Range" [100000, 20000, 2200, 800, 200, 100]
-    line "100 mA Range" [10000, 2000, 200, 80, 20, 10]
-    line "10 mA Range" [1000, 200, 25, 8, 2, 1]
-    line "1 mA Range" [100, 20, 2.5, 0.8, 0.2, 0.1]
-    line "100 uA Range" [10, 2, 0.3, 0.1, 0.02, 0.01]
-    line "1 uA Range" [0.1, 0.02, 0.005, 0.002, 0.0005, 0.0002]
-    line "10 nA Range" [0.001, 0.0001, 0.00005, 0.00003, 0.00001, 0.000003]
-```
+
+![](images/e2463c2ccb4e6009652e7a849d3a3e343a4ed6c38b6b09eaa4d6b510d2d5066e.jpg)
+
 
 Note When the aperture time is set to 2 power-line cycles (PLCs),measurement noise differs slightly depending on whether the Power LineFrequency is set to 50 Hz or 60 Hz.
 
 
 Figure 5. Measurement Noise, 10 nA Range, No Load, 0 V, 3 m Cables, Nominal
 
-```mermaid
-xychart-beta
-    title "Current Noise: 10 PLC vs 2 PLC (Increased Sample Density)"
-    x-axis "Sample Number (0 to 1000)" [0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
-    y-axis "Current (fA)" -300 --> 300
-    line "2 PLC (78.1 fA RMS)" [140, -110, 180, -220, 90, -260, 150, -190, 250, -240, 120, -150, 210, -270, 80]
-    line "10 PLC (35.5 fA RMS)" [40, -35, 50, -45, 30, -55, 45, -40, 60, -50, 35, -40, 55, -65, 30]
-```
+
+![](images/add2f0bf010ca423dde95d949c1cd2701a41419239be33fd552bb55949971739.jpg)
 
 
 
 Figure 6. Measurement Noise, 10 nA Range, 1 GΩ Load, 9 V, 3 m Cables, Nominal
 
 
-```mermaid
-xychart-beta
-    title "10 nA Range Noise: 2 PLC (1000 Samples)"
-    x-axis "Sample Number" [0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
-    y-axis "Current (nA)" 8.9939 --> 8.9949
-    line "2 PLC Trace" [8.9945, 8.9947, 8.9941, 8.9946, 8.9943, 8.9948, 8.9942, 8.9945, 8.9941, 8.9948, 8.9944, 8.9946, 8.9940, 8.9947, 8.9943, 8.9945, 8.9942, 8.9948, 8.9941, 8.9946, 8.9944]
+![](images/ba112e41f5c9679497466be2901d63698926fd1dd932a15ea91e183932d8b086.jpg)
 
-```
 
 Note Measurement noise vs. aperture plot measurements were taken withno load and no cabling. When using small aperture times, measurementnoise may be impacted by system cabling.
 
@@ -251,13 +265,8 @@ This applies to the PXIe-4135 (20W) when used with any chassis and only applies 
 Figure 7. Sinking Power vs. Ambient Temperature Derating
 
 
-```mermaid
-xychart-beta
-    title "Sinking Power vs. Ambient Temperature"
-    x-axis "Ambient Temperature (°C)" [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60]
-    y-axis "Sinking Power (W)" 0 --> 13
-    line "Maximum Sinking Power" [12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 11, 10, 0]
-```
+![](images/406a3c945098fac033f8d3d112de86504bf74d41b56705bdd2225ae9f0043b7c.jpg)
+
 
 Note When using the PXIe-4135 (40W) with a chassis with slot coolingcapacity ≥58 W, ambient temperature derating does not apply.
 
@@ -297,37 +306,11 @@ The following figure visually explains the terms used in the extended range puls
 Figure 8. Definition of Pulsing Terminology
 
 
-```mermaid
-sequenceDiagram
-    autonumber
-    participant D as Device
-    participant S as Source/Measure Logic
-
-    Note over D,S: Pulse Trigger Received (Start Cycle)
-    
-    rect rgb(240, 240, 240)
-    Note right of S: ON TIME (t_on)
-    D->>S: Source Delay
-    S->>D: Emit Source Complete
-    D->>S: Measure Window
-    S->>D: Emit Measure Complete
-    end
-
-    Note over D,S: Pulse Level Drops to Bias Level
-
-    rect rgb(220, 230, 240)
-    Note right of S: OFF TIME (t_off)
-    D->>S: Bias Delay
-    S->>D: Emit Pulse Complete
-    Note over D,S: Idle at Bias Level
-    S->>D: Emit Ready for Pulse Trigger
-    end
-
-    Note over D,S: Next Pulse Trigger Received
-```
+![](images/a1bef7244b884e2b96011481e0dc6c077ff42d9bab0d65f6006593cd914736fc.jpg)
 
 
 # Extended Range Pulsing for PXIe-4135 (40W)
+
 
 Note Extended range pulses fall outside DC range limits for either current orpower. In-range pulses fall within DC range limits and are not subject toextended range pulsing limitations. Extended range pulsing is enabled bysetting the Output Function to Pulse Voltage or Pulse Current.
 
@@ -338,8 +321,19 @@ sources/sinks is from 0.5 A to 1.0 A, then the maximum SMU current step is 0.5 A
 20. Measurable unit of μs/A is used because the minimum pulse cycle time is independent of outputvoltage
 
 
+Figure 9. Pulse On-time vs Pulse Current and Pulse Voltage
+
+
+![](images/8c5dec4f44518ce1b77a0d46cdb3f6941f3c17cc9e4af83ace9224d265c78411.jpg)
+
 
 Note Equations to solve for maximum pulse on time, tonMax, are shown inTable 6. PXIe-4135 (40W) Pulse Level Limits . Additionally, Equation 8 solvesfor pulse on time, ton, in terms of maximum pulse energy in Example 1:Determining Extended Range Pulse On Time and Duty Cycle Parameters forthe (40W).
+
+
+Figure 10. Duty Cycle vs Pulse Current and Pulse Voltage
+
+
+![](images/a74668e14fec393cfca63c25d4e44c5d82e5c5d2fe951af43df7dd345a832dc4.jpg)
 
 
 Note Equations to solve for maximum duty cycle, $\mathsf { D } _ { \mathsf { M a x } }$ , are shown in Table6. PXIe-4135 (40W) Pulse Level Limits . Additionally, Equation 9 solves forpulse off time, toff, in terms of maximum pulse energy in Example 1:
@@ -405,16 +399,9 @@ The following figures illustrate the effect of the transient response setting on
 
 Figure 11. 1 mA Range, No Load Step Response, Nominal
 
-```mermaid
-xychart-beta
-    title "Signal Settling Time: Amplitude vs. Time (No Load)"
-    x-axis "Time (Microseconds)" [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
-    y-axis "Amplitude (Volts)" 0 --> 1.1
-    line "Custom" [0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
-    line "Fast" [0.0, 0.9, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
-    line "Normal" [0.0, 0.4, 0.7, 0.85, 0.92, 0.96, 0.98, 0.99, 1.0, 1.0, 1.0]
-    line "Slow" [0.0, 0.03, 0.06, 0.09, 0.12, 0.15, 0.18, 0.21, 0.24, 0.27, 0.3]
-```
+
+![](images/fddd0b1c6b75a55ee7bc75ae98f279cdc02cf8b87c8154905e89b42b0bab6277.jpg)
+
 
 31. Current limit set to ${ \ge } 6 0 \mu \mathsf { A }$ and $\geq 6 0 \%$ of the selected current limit range.
 
@@ -426,15 +413,7 @@ xychart-beta
 Figure 12. 1 mA Range, 100 nF Load Step Response, Nominal
 
 
-```mermaid
-xychart-beta
-    title "Signal Settling Time: Amplitude vs. Time (100 nF Load)"
-    x-axis "Time (Milliseconds)" [0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0]
-    y-axis "Amplitude (Volts)" 0 --> 1.3
-    line "Normal (with Ringing)" [0.0, 1.22, 0.95, 1.02, 0.99, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
-    line "Custom" [0.0, 0.98, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
-    line "Slow" [0.0, 0.3, 0.65, 0.88, 0.95, 0.98, 0.99, 1.0, 1.0, 1.0, 1.0]
-```
+![](images/6ec933866ccdaac2c4825d35f20772670cce0b95623fd1c9ca6f93dcdfc8071c.jpg)
 
 
 
@@ -454,7 +433,6 @@ Expected Relay Life
 
 
 <table><tr><td>Output Connected</td><td>≥100 k cycles</td></tr></table>
-
 
 
 Note To avoid excessive relay wear, do not set Output Connected to TRUEwhen a non-zero voltage is connected to the output.
@@ -486,6 +464,7 @@ Measurement and Update Timing Characteristics
 <table><tr><td>Maximum sense lead resistance</td><td>100 Ω</td></tr><tr><td>Maximum lead drop per lead</td><td>3 V, maximum 202 V between HI and LO terminals</td></tr></table>
 
 
+
 Note Exceeding the maximum lead drop per lead value may cause the driverto report a sense lead error.
 
 # Related reference:
@@ -497,16 +476,12 @@ Note Exceeding the maximum lead drop per lead value may cause the driverto repor
 The safety interlock feature is designed to prevent users from coming in contact withhazardous voltage generated by the SMU in systems that implement protectivebarriers with controlled user access points.
 
 
-
 Caution Hazardous voltages of up to the maximum voltage of the PXIe-4135may appear at the output terminals if the safety interlock terminal is closed.Open the safety interlock terminal when the output connections areaccessible. With the safety interlock terminal open, the output voltage level/limit is limited to ±40 V DC, and protection will be triggered if the voltagemeasured between the device HI and LO terminals exceeds$\pm ( 4 2 \lor \mathsf { p e a k } \pm 0 . 4 \lor )$ .
-
-
 
 
 Attention Des tensions dangereuses allant jusqu'à la tension maximale duPXIe-4135 peuvent apparaître aux terminaux de sortie si le terminal deverrouillage de sécurité est fermé. Ouvrez le terminal de verrouillage desécurité lorsque les connexions de sortie sont accessibles. Lorsque leterminal de verrouillage de sécurité est ouvert, le niveau ou la limite de
 
 tension de sortie est limité $\mathsf { \lambda } \dot { \mathsf { a } } \pm 4 0 \mathsf { V } \mathsf { C } \mathsf { C }$ , et la protection se déclenchera si latension mesurée entre les terminaux HI et LO de l'appareil dépasse$\pm \ : ( 4 2 \vee \mathsf { p i c } \pm 0 , 4 \vee )$ .
-
 
 
 Caution Do not apply voltage to the safety interlock connector inputs. Theinterlock connector is designed to accept passive, normally open contactclosure connections only.
@@ -516,6 +491,7 @@ Attention N'appliquez pas de tension aux entrées du connecteur deverrouillage d
 <table><tr><td colspan="2">Safety interlock terminal open</td></tr><tr><td>Output</td><td>&lt;±42.4 V peak</td></tr><tr><td>Setpoint</td><td>&lt;±40 V DC</td></tr><tr><td colspan="2">Safety interlock terminal closed</td></tr><tr><td>Output</td><td>Maximum voltage of the device</td></tr><tr><td>Setpoint</td><td>Maximum selected voltage range</td></tr></table>
 
 # Examples of Calculating Accuracy Specifications
+
 
 Note Specifications listed in examples are for demonstration purposes onlyand do not necessarily reflect specifications for this device.
 
@@ -598,8 +574,6 @@ $$
 Therefore, the actual output is within 398.2 pA of 900 nA.
 
 # Examples of Determining Extended Range PulseParameters and Optimizing Slew Rate using NISourceAdapt
-
-
 
 Note Specifications listed in examples are for demonstration purposes onlyand do not necessarily reflect specifications for this device.
 
@@ -695,13 +669,7 @@ The SMU Transient Response can be configured to three predefined settings, Slow,
 Figure 13. 10 μs Pulse Output with Load, Fast Transient Response
 
 
-```mermaid
-xychart-beta
-    title "Transient Current vs. Time"
-    x-axis "Time (us)" [0, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500]
-    y-axis "Current (A)" 0 --> 3.5
-    line "Current Pulse" [0.0, 0.43, 0.15, 0.08, 0.04, 0.02, 0.01, 0.005, 0.002, 0.001, 0.0]
-```
+![](images/a349538f47bcd195deab08d164452d70f10be142ff90c9d1605d8ae2b010a35d.jpg)
 
 
 # Solution
@@ -714,13 +682,7 @@ To achieve the resulting waveform in the following figure, use the parameters in
 Figure 14. 10 μs Pulse Output with Load, Custom Transient Response
 
 
-```mermaid
-xychart-beta
-    title "High-Magnitude Current Spike vs. Time"
-    x-axis "Time (us)" [0, 25, 50, 75, 100, 150, 200, 300, 400, 500]
-    y-axis "Current (A)" 0 --> 3.5
-    line "Current Spike" [0.0, 3.0, 0.1, 0.02, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-```
+![](images/a8babf3134099362c999bc6377a7ae6e51a98f3a022688f3e4e2599dee262f91.jpg)
 
 
 <table><tr><td>Transient response</td><td>Custom</td></tr><tr><td>Current: Gain bandwidth</td><td>900 kHz</td></tr><tr><td>Current: Compensation frequency</td><td>200 kHz</td></tr></table>
@@ -734,14 +696,8 @@ Gain bandwidth is directly proportional to the step response slew rate. The high
 
 Figure 15. Example of Ringing Frequency
 
-```mermaid
-xychart-beta
-    title "Settling Time: Open Load vs. 0.47 uF Load"
-    x-axis "Time (Milliseconds)" [0.0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5]
-    y-axis "Amplitude (Volts)" 0 --> 1.2
-    line "0.47 uF Load (Ringing)" [0.0, 0.5, 1.1, 0.92, 1.05, 0.97, 1.02, 0.99, 1.01, 1.0, 1.0]
-    line "Open Load (Fast)" [0.95, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
-```
+
+![](images/7bb61ed88d207f6c1533a562a21b2a73b32ddbcfe26664c03abef9b2922c0bac.jpg)
 
 
 Compensation frequency and pole-zero ratio are used to determine the frequencies ofthe SMU control loop pole and zero, which can be used to optimize the systemtransient response by increasing phase margin and reducing ringing. To reduce theovershoot, it is recommended to set the compensation frequency close to theovershoot ringing frequency, see Fc in the figure above, and set the pole-zero ratio tobe greater than 1.
@@ -777,8 +733,6 @@ These settings can be accessed through the Transient Response set to Custom: Vol
 
 Notice The protection provided by the PXIe-4135 can be impaired if it isused in a manner not described in the user documentation.
 
-
-
 Warning Take precautions to avoid electrical shock when operating thisproduct at hazardous voltages.
 
 
@@ -788,7 +742,6 @@ Caution Isolation voltage ratings apply to the voltage measured betweenany chann
 Attention Les tensions nominales d'isolation s'appliquent à la tensionmesurée entre n'importe quelle broche de voie et la masse du châssis. Lorsde l'utilisation de voies en série ou flottantes en plus des références detension externes, assurez-vous qu'aucun terminal ne dépasse cette valeurnominale.
 
 <table><tr><td colspan="2">DC voltage</td><td>±200 V</td></tr><tr><td colspan="3">Channel-to-earth ground isolation</td></tr><tr><td>Continuous</td><td colspan="2">250 V DC, CAT I</td></tr><tr><td>Withstand</td><td colspan="2">1,000 V RMS, verified by a 5 s withstand</td></tr></table>
-
 
 Caution Do not connect the PXIe-4135 to signals or use for measurementswithin Measurement Categories II, III, or IV.
 

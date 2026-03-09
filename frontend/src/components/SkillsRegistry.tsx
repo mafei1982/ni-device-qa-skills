@@ -13,6 +13,7 @@ const typeBadgeColors: Record<string, string> = {
   workflow: "bg-purple-100 text-purple-700",
   user_manual: "bg-blue-100 text-blue-700",
   specifications: "bg-teal-100 text-teal-700",
+  programming_api: "bg-amber-100 text-amber-700",
 };
 
 function badgeLabel(skill: Skill): string {
@@ -40,9 +41,10 @@ export default function SkillsRegistry() {
   const [showUploadForm, setShowUploadForm] = useState(false);
   const [uploadDevice, setUploadDevice] = useState("");
   const [uploadSubtype, setUploadSubtype] = useState<
-    "user_manual" | "specifications"
+    "user_manual" | "specifications" | "programming_api"
   >("user_manual");
   const [uploadCategory, setUploadCategory] = useState("");
+  const [uploadLanguage, setUploadLanguage] = useState("");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -98,10 +100,17 @@ export default function SkillsRegistry() {
     setUploading(true);
     setUploadError(null);
     try {
-      await uploadDocSkill(uploadFile, uploadDevice.trim(), uploadSubtype, uploadCategory.trim());
+      await uploadDocSkill(
+        uploadFile,
+        uploadDevice.trim(),
+        uploadSubtype,
+        uploadCategory.trim(),
+        uploadSubtype === "programming_api" ? uploadLanguage.trim() : undefined,
+      );
       setShowUploadForm(false);
       setUploadDevice("");
       setUploadCategory("");
+      setUploadLanguage("");
       setUploadFile(null);
       if (fileRef.current) fileRef.current.value = "";
       fetchSkills();
@@ -180,13 +189,14 @@ export default function SkillsRegistry() {
                 value={uploadSubtype}
                 onChange={(e) =>
                   setUploadSubtype(
-                    e.target.value as "user_manual" | "specifications"
+                    e.target.value as "user_manual" | "specifications" | "programming_api"
                   )
                 }
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 transition-colors bg-white"
               >
                 <option value="user_manual">User Manual</option>
                 <option value="specifications">Specifications</option>
+                <option value="programming_api">Programming API</option>
               </select>
             </div>
             <div>
@@ -204,6 +214,20 @@ export default function SkillsRegistry() {
                 Device category groups related devices (e.g. all SMUs belong to "dcpower")
               </p>
             </div>
+            {uploadSubtype === "programming_api" && (
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  Programming Language
+                </label>
+                <input
+                  type="text"
+                  placeholder='e.g. C, Python, LabVIEW'
+                  value={uploadLanguage}
+                  onChange={(e) => setUploadLanguage(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 transition-colors"
+                />
+              </div>
+            )}
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">
                 Markdown File
@@ -265,6 +289,9 @@ export default function SkillsRegistry() {
                       {skill.device}
                       {skill.category && skill.category !== skill.device && (
                         <span className="text-gray-400"> · {skill.category}</span>
+                      )}
+                      {skill.language && (
+                        <span className="text-gray-400"> · {skill.language}</span>
                       )}
                     </span>
                   )}

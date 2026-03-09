@@ -44,6 +44,264 @@
       "device": "pxie_4135",
       "category": "dcpower",
       "description": "PXIe-4135 device-specific User Manual — official documentation."
+    },
+    {
+      "name": "pxie_4147_user_manual",
+      "type": "doc",
+      "subtype": "user_manual",
+      "device": "pxie_4147",
+      "description": "pxie_4147 User Manual — official documentation.",
+      "category": "dcpower"
+    },
+    {
+      "name": "pxie_4147_specifications",
+      "type": "doc",
+      "subtype": "specifications",
+      "device": "pxie_4147",
+      "description": "pxie_4147 Specifications — official documentation.",
+      "category": "dcpower"
+    },
+    {
+      "name": "pxie_4136_specifications",
+      "type": "doc",
+      "subtype": "specifications",
+      "device": "pxie_4136",
+      "description": "pxie_4136 Specifications — official documentation.",
+      "category": "dcpower"
+    },
+    {
+      "name": "pxie_4136_user_manual",
+      "type": "doc",
+      "subtype": "user_manual",
+      "device": "pxie_4136",
+      "description": "pxie_4136 User Manual — official documentation.",
+      "category": "dcpower"
+    },
+    {
+      "name": "pxie_4137_specifications",
+      "type": "doc",
+      "subtype": "specifications",
+      "device": "pxie_4137",
+      "description": "pxie_4137 Specifications — official documentation.",
+      "category": "dcpower"
+    },
+    {
+      "name": "pxie_4137_user_manual",
+      "type": "doc",
+      "subtype": "user_manual",
+      "device": "pxie_4137",
+      "description": "pxie_4137 User Manual — official documentation.",
+      "category": "dcpower"
+    },
+    {
+      "name": "pxie_4138_specifications",
+      "type": "doc",
+      "subtype": "specifications",
+      "device": "pxie_4138",
+      "description": "pxie_4138 Specifications — official documentation.",
+      "category": "dcpower"
+    },
+    {
+      "name": "pxie_4138_user_manual",
+      "type": "doc",
+      "subtype": "user_manual",
+      "device": "pxie_4138",
+      "description": "pxie_4138 User Manual — official documentation.",
+      "category": "dcpower"
+    },
+    {
+      "name": "pxie_4139_specifications",
+      "type": "doc",
+      "subtype": "specifications",
+      "device": "pxie_4139",
+      "description": "pxie_4139 Specifications — official documentation.",
+      "category": "dcpower"
+    },
+    {
+      "name": "pxie_4139_user_manual",
+      "type": "doc",
+      "subtype": "user_manual",
+      "device": "pxie_4139",
+      "description": "pxie_4139 User Manual — official documentation.",
+      "category": "dcpower"
+    },
+    {
+      "name": "pxie_4140_specifications",
+      "type": "doc",
+      "subtype": "specifications",
+      "device": "pxie_4140",
+      "description": "pxie_4140 Specifications — official documentation.",
+      "category": "dcpower"
+    },
+    {
+      "name": "pxie_4140_user_manual",
+      "type": "doc",
+      "subtype": "user_manual",
+      "device": "pxie_4140",
+      "description": "pxie_4140 User Manual — official documentation.",
+      "category": "dcpower"
+    },
+    {
+      "name": "pxie_4141_specifications",
+      "type": "doc",
+      "subtype": "specifications",
+      "device": "pxie_4141",
+      "description": "pxie_4141 Specifications — official documentation.",
+      "category": "dcpower"
+    },
+    {
+      "name": "pxie_4141_user_manual",
+      "type": "doc",
+      "subtype": "user_manual",
+      "device": "pxie_4141",
+      "description": "pxie_4141 User Manual — official documentation.",
+      "category": "dcpower"
+    },
+    {
+      "name": "pxie_4142_specifications",
+      "type": "doc",
+      "subtype": "specifications",
+      "device": "pxie_4142",
+      "description": "pxie_4142 Specifications — official documentation.",
+      "category": "dcpower"
+    },
+    {
+      "name": "pxie_4142_user_manual",
+      "type": "doc",
+      "subtype": "user_manual",
+      "device": "pxie_4142",
+      "description": "pxie_4142 User Manual — official documentation.",
+      "category": "dcpower"
+    },
+    {
+      "name": "pxie_4143_specifications",
+      "type": "doc",
+      "subtype": "specifications",
+      "device": "pxie_4143",
+      "description": "pxie_4143 Specifications — official documentation.",
+      "category": "dcpower"
+    },
+    {
+      "name": "pxie_4143_user_manual",
+      "type": "doc",
+      "subtype": "user_manual",
+      "device": "pxie_4143",
+      "description": "pxie_4143 User Manual — official documentation.",
+      "category": "dcpower"
+    },
+    {
+      "name": "pxie_4144_specifications",
+      "type": "doc",
+      "subtype": "specifications",
+      "device": "pxie_4144",
+      "description": "pxie_4144 Specifications — official documentation.",
+      "category": "dcpower"
+    },
+    {
+      "name": "pxie_4144_user_manual",
+      "type": "doc",
+      "subtype": "user_manual",
+      "device": "pxie_4144",
+      "description": "pxie_4144 User Manual — official documentation.",
+      "category": "dcpower"
+    },
+    {
+      "name": "pxie_4145_specifications",
+      "type": "doc",
+      "subtype": "specifications",
+      "device": "pxie_4145",
+      "description": "pxie_4145 Specifications — official documentation.",
+      "category": "dcpower"
+    },
+    {
+      "name": "pxie_4145_user_manual",
+      "type": "doc",
+      "subtype": "user_manual",
+      "device": "pxie_4145",
+      "description": "pxie_4145 User Manual — official documentation.",
+      "category": "dcpower"
+    },
+    {
+      "name": "pxie_4162_specifications",
+      "type": "doc",
+      "subtype": "specifications",
+      "device": "pxie_4162",
+      "description": "pxie_4162 Specifications — official documentation.",
+      "category": "dcpower"
+    },
+    {
+      "name": "pxie_4162_user_manual",
+      "type": "doc",
+      "subtype": "user_manual",
+      "device": "pxie_4162",
+      "description": "pxie_4162 User Manual — official documentation.",
+      "category": "dcpower"
+    },
+    {
+      "name": "pxie_4190_specifications",
+      "type": "doc",
+      "subtype": "specifications",
+      "device": "pxie_4190",
+      "description": "pxie_4190 Specifications — official documentation.",
+      "category": "dcpower"
+    },
+    {
+      "name": "pxie_4190_user_manual",
+      "type": "doc",
+      "subtype": "user_manual",
+      "device": "pxie_4190",
+      "description": "pxie_4190 User Manual — official documentation.",
+      "category": "dcpower"
+    },
+    {
+      "name": "dcpower_c_api_attributes_general",
+      "type": "doc",
+      "subtype": "programming_api",
+      "device": "dcpower_c_api",
+      "description": "NI-DCPower C API — General Attributes & Events: Advanced settings (power source, isolation, interlock, calibration persistence), device-specific attributes (cable length), and Event attributes (Measure Complete, Pulse Complete, Source Complete, Sequence Engine Done, Sequence Iteration Complete, Ready for Pulse Trigger).",
+      "language": "c",
+      "category": "dcpower",
+      "api_section": "attributes_general"
+    },
+    {
+      "name": "dcpower_c_api_lcr",
+      "type": "doc",
+      "subtype": "programming_api",
+      "device": "dcpower_c_api",
+      "description": "NI-DCPower C API — LCR & Impedance: LCR measurement attributes (AC stimulus, AC dither, current/voltage range, aperture time, frequency, impedance range, source delay), LCR compensation attributes (open/short/load compensation, measured load reactance/resistance, DC bias), and instrument mode.",
+      "language": "c",
+      "category": "dcpower",
+      "api_section": "lcr"
+    },
+    {
+      "name": "dcpower_c_api_measure",
+      "type": "doc",
+      "subtype": "programming_api",
+      "device": "dcpower_c_api",
+      "description": "NI-DCPower C API — Measure: Measurement attributes including autorange, aperture time, aperture time units and auto-mode, measure when, measure record length/delta time, DC noise rejection, power line frequency, sense (local/remote), samples to average, and measure trigger configuration.",
+      "language": "c",
+      "category": "dcpower",
+      "api_section": "measure"
+    },
+    {
+      "name": "dcpower_c_api_source",
+      "type": "doc",
+      "subtype": "programming_api",
+      "device": "dcpower_c_api",
+      "description": "NI-DCPower C API — Source & Triggers (Attributes): Source attributes (voltage/current level, limits, compliance, output function, output resistance, source mode, source delay, conduction voltage, transient response, overranging), constant power/resistance attributes, DC voltage/current attributes, pulse voltage/current attributes, output cutoff, trigger attributes (measure/pulse/sequence advance/shutdown/source/start triggers, digital edge configuration), and Supported Attributes by Device tables.",
+      "language": "c",
+      "category": "dcpower",
+      "api_section": "source"
+    },
+    {
+      "name": "dcpower_c_api_functions",
+      "type": "doc",
+      "subtype": "programming_api",
+      "device": "dcpower_c_api",
+      "description": "NI-DCPower C API — Functions Reference: All C function signatures and parameters including Calibration (niDCPower_ChangeExtCalPassword, self-calibrate), LCR Compensation functions, Control (Abort, Commit, Initiate), Initialize/Close, Measure functions (ConfigureApertureTime, FetchMultiple, Measure, MeasureMultiple), Query functions (QueryLatchedOutputCutoffState, QueryMaxCurrentLimit, QueryMaxVoltageLevel, QueryOutputState), Set/Get Attribute, Source functions (ConfigureSourceMode, CreateAdvancedSequenceStep, SetSequence), Trigger/Event functions (ConfigureTrigger, SendSoftwareEdgeTrigger, ExportSignal, WaitForEvent), Utility, IVI, Locking, and obsolete/unsupported functions.",
+      "language": "c",
+      "category": "dcpower",
+      "api_section": "functions"
     }
   ]
 }
