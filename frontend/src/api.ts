@@ -40,6 +40,24 @@ export interface Skill {
   language?: string;
 }
 
+export interface SplitDefinition {
+  filename: string;
+  title: string;
+  prefixes: string[];
+}
+
+export interface ProcessPdfEvent {
+  type: "status" | "token_estimate" | "split_preview" | "done" | "error";
+  step?: string;
+  message?: string;
+  chars?: number;
+  estimated_tokens?: number;
+  images_copied?: number;
+  skills?: Skill[];
+  source_skill?: string;
+  splits?: SplitDefinition[];
+}
+
 export interface SkillsResponse {
   skills: Skill[];
 }
@@ -163,6 +181,82 @@ export async function sendChatStream(
   }
 
   return result;
+}
+
+/**
+ * Process a PDF upload: MinerU conversion + LLM cleanup + registration.
+ * Returns progress events via SSE.
+ */
+export async function processPdfSkill(
+  file: File,
+  device: string,
+  subtype: "user_manual" | "specifications" | "programming_api",
+  category: string,
+  language: string | undefined,
+  onEvent: (event: ProcessPdfEvent) => void,
+  signal?: AbortSignal,
+): Promise<void> {
+  const form = new FormData();
+  form.append("file", file);
+  form.append("device", device);
+  form.append("subtype", subtype);
+  form.append("category", category);
+  if (language) form.append("language", language);
+
+  const res = await fetch(`${BASE_URL}/api/skills/process-pdf`, {
+    method: "POST",
+    body: form,
+    signal,
+  });
+
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+  }
+
+  const reader = res.body!.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const parts = buffer.split("\n\n");
+      buffer = parts.pop() || "";
+
+      for (const part of parts) {
+        const trimmed = part.trim();
+        if (!trimmed || !trimmed.startsWith("data: ")) continue;
+        try {
+          const data: ProcessPdfEvent = JSON.parse(trimmed.substring(6));
+          onEvent(data);
+        } catch {
+          // skip malformed
+        }
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+}
+
+/**
+ * Execute a confirmed API doc split.
+ */
+export async function splitApiDoc(
+  sourceSkill: string,
+  splits: SplitDefinition[],
+  device: string,
+  category: string,
+  language: string,
+): Promise<{ created: Skill[] }> {
+  const res = await axios.post<{ created: Skill[] }>(
+    `${BASE_URL}/api/skills/split-api`,
+    { source_skill: sourceSkill, splits, device, category, language },
+  );
+  return res.data;
 }
 
 export async function getModels(): Promise<ModelsResponse> {

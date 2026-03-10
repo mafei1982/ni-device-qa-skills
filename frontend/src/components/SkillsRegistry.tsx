@@ -1,11 +1,25 @@
 import { useEffect, useRef, useState } from "react";
-import { Loader2, BookOpen, Upload, Trash2, Plus, X } from "lucide-react";
+import {
+  Loader2,
+  BookOpen,
+  Upload,
+  Trash2,
+  Plus,
+  X,
+  AlertTriangle,
+  Check,
+  FileText,
+} from "lucide-react";
 import {
   getSkills,
   getSkillContent,
   uploadDocSkill,
   deleteSkill,
+  processPdfSkill,
+  splitApiDoc,
   type Skill,
+  type ProcessPdfEvent,
+  type SplitDefinition,
 } from "../api";
 import Modal from "./Modal";
 
@@ -25,6 +39,31 @@ function badgeColor(skill: Skill): string {
   const key = skill.type === "doc" && skill.subtype ? skill.subtype : skill.type;
   return typeBadgeColors[key] ?? "bg-gray-100 text-gray-600";
 }
+
+type ProcessingStep =
+  | "idle"
+  | "converting"
+  | "images"
+  | "token_warning"
+  | "cleaning"
+  | "saving"
+  | "saving_raw"
+  | "analyzing"
+  | "split_preview"
+  | "splitting"
+  | "done"
+  | "error";
+
+const STEP_LABELS: Record<string, string> = {
+  converting: "Converting PDF with MinerU…",
+  images: "Copying extracted images…",
+  cleaning: "Cleaning markdown with LLM…",
+  saving: "Saving and registering…",
+  saving_raw: "Saving converted API doc…",
+  analyzing: "Analyzing API doc structure…",
+  splitting: "Splitting API doc…",
+  done: "Done!",
+};
 
 export default function SkillsRegistry() {
   const [skills, setSkills] = useState<Skill[]>([]);
@@ -50,8 +89,23 @@ export default function SkillsRegistry() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // PDF processing state
+  const [processingStep, setProcessingStep] = useState<ProcessingStep>("idle");
+  const [processingMessage, setProcessingMessage] = useState("");
+  const [tokenEstimate, setTokenEstimate] = useState<{
+    chars: number;
+    tokens: number;
+    images: number;
+  } | null>(null);
+  const [splitPreview, setSplitPreview] = useState<{
+    sourceSkill: string;
+    splits: SplitDefinition[];
+  } | null>(null);
+
   // Delete state
   const [deleting, setDeleting] = useState<string | null>(null);
+
+  const isPdf = uploadFile?.name.toLowerCase().endsWith(".pdf") ?? false;
 
   function fetchSkills() {
     setLoading(true);
@@ -95,8 +149,23 @@ export default function SkillsRegistry() {
     setModalError(null);
   }
 
+  function resetProcessingState() {
+    setProcessingStep("idle");
+    setProcessingMessage("");
+    setTokenEstimate(null);
+    setSplitPreview(null);
+  }
+
   async function handleUpload() {
     if (!uploadFile || !uploadDevice.trim()) return;
+
+    // If it's a PDF, use the processing pipeline
+    if (isPdf) {
+      await handleProcessPdf();
+      return;
+    }
+
+    // Otherwise, existing MD upload flow
     setUploading(true);
     setUploadError(null);
     try {
@@ -117,6 +186,106 @@ export default function SkillsRegistry() {
     } catch (err) {
       setUploadError(
         err instanceof Error ? err.message : "Upload failed."
+      );
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleProcessPdf() {
+    if (!uploadFile || !uploadDevice.trim()) return;
+    setUploading(true);
+    setUploadError(null);
+    resetProcessingState();
+    setProcessingStep("converting");
+
+    try {
+      await processPdfSkill(
+        uploadFile,
+        uploadDevice.trim(),
+        uploadSubtype,
+        uploadCategory.trim(),
+        uploadSubtype === "programming_api" ? uploadLanguage.trim() : undefined,
+        (event: ProcessPdfEvent) => {
+          switch (event.type) {
+            case "status":
+              setProcessingStep((event.step as ProcessingStep) || "converting");
+              setProcessingMessage(event.message || "");
+              break;
+            case "token_estimate":
+              setTokenEstimate({
+                chars: event.chars || 0,
+                tokens: event.estimated_tokens || 0,
+                images: event.images_copied || 0,
+              });
+              break;
+            case "split_preview":
+              setProcessingStep("split_preview");
+              setSplitPreview({
+                sourceSkill: event.source_skill || "",
+                splits: event.splits || [],
+              });
+              setUploading(false);
+              break;
+            case "done":
+              setProcessingStep("done");
+              setUploading(false);
+              setTimeout(() => {
+                setShowUploadForm(false);
+                resetProcessingState();
+                setUploadDevice("");
+                setUploadCategory("");
+                setUploadLanguage("");
+                setUploadFile(null);
+                if (fileRef.current) fileRef.current.value = "";
+                fetchSkills();
+              }, 1500);
+              break;
+            case "error":
+              setProcessingStep("error");
+              setUploadError(event.message || "Processing failed.");
+              setUploading(false);
+              break;
+          }
+        },
+      );
+    } catch (err) {
+      setProcessingStep("error");
+      setUploadError(
+        err instanceof Error ? err.message : "Processing failed."
+      );
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleConfirmSplit() {
+    if (!splitPreview) return;
+    setProcessingStep("splitting");
+    setUploading(true);
+    try {
+      await splitApiDoc(
+        splitPreview.sourceSkill,
+        splitPreview.splits,
+        uploadDevice.trim(),
+        uploadCategory.trim(),
+        uploadLanguage.trim(),
+      );
+      setProcessingStep("done");
+      setTimeout(() => {
+        setShowUploadForm(false);
+        resetProcessingState();
+        setUploadDevice("");
+        setUploadCategory("");
+        setUploadLanguage("");
+        setUploadFile(null);
+        if (fileRef.current) fileRef.current.value = "";
+        fetchSkills();
+      }, 1500);
+    } catch (err) {
+      setProcessingStep("error");
+      setUploadError(
+        err instanceof Error ? err.message : "Split failed."
       );
     } finally {
       setUploading(false);
@@ -150,7 +319,10 @@ export default function SkillsRegistry() {
           Skills Registry
         </h2>
         <button
-          onClick={() => setShowUploadForm(!showUploadForm)}
+          onClick={() => {
+            setShowUploadForm(!showUploadForm);
+            if (showUploadForm) resetProcessingState();
+          }}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 transition-colors"
         >
           {showUploadForm ? (
@@ -230,31 +402,146 @@ export default function SkillsRegistry() {
             )}
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">
-                Markdown File
+                Document File
               </label>
               <input
                 ref={fileRef}
                 type="file"
-                accept=".md"
-                onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)}
+                accept=".md,.pdf"
+                onChange={(e) => {
+                  setUploadFile(e.target.files?.[0] ?? null);
+                  resetProcessingState();
+                }}
                 className="w-full text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
               />
+              {isPdf && (
+                <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                  <FileText size={12} />
+                  PDF detected — will be processed with MinerU + LLM cleanup
+                </p>
+              )}
             </div>
+
+            {/* Token cost warning */}
+            {isPdf && tokenEstimate && processingStep !== "done" && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-2">
+                <AlertTriangle size={16} className="text-amber-500 flex-shrink-0 mt-0.5" />
+                <div className="text-xs text-amber-800">
+                  <p className="font-medium mb-1">Token Cost Estimate</p>
+                  <p>
+                    Document size: <strong>{(tokenEstimate.chars / 1024).toFixed(1)} KB</strong>
+                    {" · "}
+                    Est. tokens: <strong>~{tokenEstimate.tokens.toLocaleString()}</strong>
+                    {tokenEstimate.images > 0 && (
+                      <>
+                        {" · "}
+                        Images: <strong>{tokenEstimate.images}</strong>
+                      </>
+                    )}
+                  </p>
+                  <p className="mt-1 text-amber-600">
+                    The entire document will be sent to the LLM for cleanup.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Processing progress */}
+            {processingStep !== "idle" && processingStep !== "split_preview" && (
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                <div className="flex items-center gap-2 text-sm">
+                  {processingStep === "done" ? (
+                    <Check size={16} className="text-green-500" />
+                  ) : processingStep === "error" ? (
+                    <AlertTriangle size={16} className="text-red-500" />
+                  ) : (
+                    <Loader2 size={16} className="animate-spin text-blue-500" />
+                  )}
+                  <span className={
+                    processingStep === "done"
+                      ? "text-green-700 font-medium"
+                      : processingStep === "error"
+                        ? "text-red-700"
+                        : "text-gray-700"
+                  }>
+                    {processingMessage || STEP_LABELS[processingStep] || "Processing…"}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Split preview modal */}
+            {processingStep === "split_preview" && splitPreview && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h4 className="text-sm font-semibold text-blue-800 mb-2">
+                  Suggested API Doc Split
+                </h4>
+                <p className="text-xs text-blue-600 mb-3">
+                  The LLM suggests splitting into {splitPreview.splits.length} files:
+                </p>
+                <div className="max-h-48 overflow-y-auto space-y-1.5 mb-3">
+                  {splitPreview.splits.map((split, i) => (
+                    <div
+                      key={i}
+                      className="bg-white rounded-md px-3 py-2 border border-blue-100 text-xs"
+                    >
+                      <span className="font-mono text-blue-700">{split.filename}</span>
+                      <span className="text-gray-500 ml-2">— {split.title}</span>
+                      <div className="text-gray-400 mt-0.5">
+                        Prefixes: {split.prefixes.join(", ")}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleConfirmSplit}
+                    disabled={uploading}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {uploading ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <Check size={14} />
+                    )}
+                    Confirm Split
+                  </button>
+                  <button
+                    onClick={() => {
+                      resetProcessingState();
+                    }}
+                    className="px-4 py-2 rounded-lg border border-gray-300 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
             {uploadError && (
               <div className="text-xs text-red-600">{uploadError}</div>
             )}
-            <button
-              onClick={handleUpload}
-              disabled={uploading || !uploadFile || !uploadDevice.trim()}
-              className="inline-flex items-center gap-1.5 self-start px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed transition-colors"
-            >
-              {uploading ? (
-                <Loader2 size={14} className="animate-spin" />
-              ) : (
-                <Upload size={14} />
-              )}
-              {uploading ? "Uploading…" : "Upload"}
-            </button>
+
+            {processingStep === "idle" && (
+              <button
+                onClick={handleUpload}
+                disabled={uploading || !uploadFile || !uploadDevice.trim()}
+                className="inline-flex items-center gap-1.5 self-start px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed transition-colors"
+              >
+                {uploading ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <Upload size={14} />
+                )}
+                {isPdf
+                  ? uploading
+                    ? "Processing…"
+                    : "Process & Upload"
+                  : uploading
+                    ? "Uploading…"
+                    : "Upload"}
+              </button>
+            )}
           </div>
         </div>
       )}

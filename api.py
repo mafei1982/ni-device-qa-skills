@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import re
+import tempfile
 from pathlib import Path
 from typing import Optional
 
@@ -15,6 +16,8 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from openai import AsyncOpenAI
 from pydantic import BaseModel
+
+import doc_processor
 
 logger = logging.getLogger("ni_device_qa")
 logging.basicConfig(
@@ -37,6 +40,11 @@ app.add_middleware(
 LLM_API_URL = os.environ["LLM_API_URL"]
 LLM_MODEL_NAME = os.environ["LLM_MODEL_NAME"]
 LLM_API_KEY = os.environ["LLM_API_KEY"]
+
+# Doc-processing LLM (defaults to the main LLM settings)
+DOC_PROCESS_MODEL = os.environ.get("DOC_PROCESS_MODEL", "google/gemini-3.1-pro-preview")
+DOC_PROCESS_API_URL = os.environ.get("DOC_PROCESS_API_URL", LLM_API_URL)
+DOC_PROCESS_API_KEY = os.environ.get("DOC_PROCESS_API_KEY", LLM_API_KEY)
 
 METADATA_PATH = Path(__file__).parent / "skills" / "metadata.json"
 SKILLS_DIR = Path(__file__).parent / "skills"
@@ -214,6 +222,197 @@ async def delete_skill(skill_name: str):
         file_path.unlink()
 
     return {"deleted": skill_name}
+
+
+# ---------------------------------------------------------------------------
+# PDF Processing
+# ---------------------------------------------------------------------------
+
+
+@app.post("/api/skills/process-pdf")
+async def process_pdf(
+    file: UploadFile = File(...),
+    device: str = Form(...),
+    subtype: str = Form(...),
+    category: str = Form(""),
+    language: str = Form(""),
+):
+    """Process a PDF upload: convert with MinerU, clean with LLM, register.
+
+    Returns an SSE stream with progress events.
+    """
+    if subtype not in ("user_manual", "specifications", "programming_api"):
+        raise HTTPException(
+            status_code=400,
+            detail="subtype must be 'user_manual', 'specifications', or 'programming_api'.",
+        )
+    if not file.filename or not file.filename.lower().endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="File must be a PDF.")
+
+    device_slug = re.sub(r"[^a-z0-9]+", "_", device.lower()).strip("_")
+
+    async def event_stream():
+        tmp_dir = Path(tempfile.mkdtemp(prefix="docproc_"))
+        try:
+            # Save uploaded PDF to temp
+            pdf_path = tmp_dir / file.filename
+            content = await file.read()
+            pdf_path.write_bytes(content)
+
+            # Step 1: MinerU conversion
+            yield _sse({"type": "status", "step": "converting", "message": "Converting PDF with MinerU..."})
+            try:
+                md_file, images_dir = doc_processor.convert_pdf_to_md(
+                    pdf_path, tmp_dir / "mineru_output"
+                )
+            except RuntimeError as e:
+                yield _sse({"type": "error", "message": str(e)})
+                return
+
+            raw_md = md_file.read_text(encoding="utf-8")
+
+            # Copy images
+            yield _sse({"type": "status", "step": "images", "message": "Copying extracted images..."})
+            img_count = doc_processor.copy_images(images_dir)
+
+            # Report estimated tokens
+            est_tokens = doc_processor.estimate_tokens(raw_md)
+            yield _sse({
+                "type": "token_estimate",
+                "chars": len(raw_md),
+                "estimated_tokens": est_tokens,
+                "images_copied": img_count,
+            })
+
+            if subtype in ("user_manual", "specifications"):
+                # Step 2: LLM cleanup
+                yield _sse({"type": "status", "step": "cleaning", "message": f"Cleaning markdown with {DOC_PROCESS_MODEL}..."})
+                try:
+                    cleaned_md = await doc_processor.cleanup_md_with_llm(
+                        raw_md, DOC_PROCESS_API_URL, DOC_PROCESS_API_KEY, DOC_PROCESS_MODEL,
+                    )
+                except Exception as e:
+                    yield _sse({"type": "error", "message": f"LLM cleanup failed: {e}"})
+                    return
+
+                # Step 3: Save and register
+                yield _sse({"type": "status", "step": "saving", "message": "Saving cleaned doc and updating registry..."})
+                skill_name = f"{device_slug}_{subtype}"
+                doc_path = SKILLS_DIR / "docs" / f"{skill_name}.md"
+                doc_path.write_text(cleaned_md, encoding="utf-8")
+
+                _subtype_labels = {
+                    "user_manual": "User Manual",
+                    "specifications": "Specifications",
+                }
+                entry = {
+                    "name": skill_name,
+                    "type": "doc",
+                    "subtype": subtype,
+                    "device": device_slug,
+                    "description": f"{device} {_subtype_labels[subtype]} — official documentation.",
+                }
+                if category.strip():
+                    entry["category"] = re.sub(
+                        r"[^a-z0-9]+", "_", category.strip().lower()
+                    ).strip("_")
+                doc_processor.register_skill(entry)
+
+                yield _sse({"type": "done", "skills": [entry]})
+
+            elif subtype == "programming_api":
+                # For API docs: first save the raw/cleaned MD, then suggest splits
+                yield _sse({"type": "status", "step": "saving_raw", "message": "Saving converted API doc..."})
+                skill_name = f"{device_slug}_programming_api"
+                doc_path = SKILLS_DIR / "docs" / f"{skill_name}.md"
+                doc_path.write_text(raw_md, encoding="utf-8")
+
+                # Analyze headers for split
+                yield _sse({"type": "status", "step": "analyzing", "message": f"Analyzing API doc structure with {DOC_PROCESS_MODEL}..."})
+                try:
+                    splits = await doc_processor.suggest_api_split(
+                        raw_md,
+                        DOC_PROCESS_API_URL,
+                        DOC_PROCESS_API_KEY,
+                        DOC_PROCESS_MODEL,
+                        device_slug=device_slug,
+                    )
+                except Exception as e:
+                    yield _sse({"type": "error", "message": f"Split analysis failed: {e}"})
+                    return
+
+                yield _sse({
+                    "type": "split_preview",
+                    "source_skill": skill_name,
+                    "splits": splits,
+                })
+
+        except Exception as e:
+            logger.exception("Unexpected error during PDF processing")
+            yield _sse({"type": "error", "message": f"Unexpected error: {e}"})
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+
+class SplitApiRequest(BaseModel):
+    source_skill: str
+    splits: list[dict]
+    device: str
+    category: str = ""
+    language: str = ""
+
+
+@app.post("/api/skills/split-api")
+async def split_api(req: SplitApiRequest):
+    """Execute a confirmed API doc split and register each resulting file."""
+    device_slug = re.sub(r"[^a-z0-9]+", "_", req.device.lower()).strip("_")
+
+    # Read the source document
+    source_path = SKILLS_DIR / "docs" / f"{req.source_skill}.md"
+    if not source_path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail=f"Source skill '{req.source_skill}' not found.",
+        )
+    raw_md = source_path.read_text(encoding="utf-8")
+
+    # Perform the split
+    result_files = doc_processor.split_api_doc(raw_md, req.splits)
+
+    created_skills = []
+    for filename, content in result_files.items():
+        out_path = SKILLS_DIR / "docs" / filename
+        out_path.write_text(content, encoding="utf-8")
+
+        # Derive skill name from filename
+        skill_name = filename.removesuffix(".md")
+        title = next(
+            (s.get("title", "") for s in req.splits if s["filename"] == filename),
+            filename,
+        )
+
+        entry: dict[str, str] = {
+            "name": skill_name,
+            "type": "doc",
+            "subtype": "programming_api",
+            "device": device_slug,
+            "description": title,
+        }
+        if req.language.strip():
+            entry["language"] = req.language.strip()
+        if req.category.strip():
+            entry["category"] = re.sub(
+                r"[^a-z0-9]+", "_", req.category.strip().lower()
+            ).strip("_")
+        doc_processor.register_skill(entry)
+        created_skills.append(entry)
+
+    return {"created": created_skills}
+
+
+def _sse(data: dict) -> str:
+    """Format a dict as an SSE data line."""
+    return f"data: {json.dumps(data)}\n\n"
 
 
 # ---------------------------------------------------------------------------
