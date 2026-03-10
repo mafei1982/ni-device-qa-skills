@@ -254,54 +254,202 @@
       "category": "dcpower"
     },
     {
-      "name": "dcpower_c_api_attributes_general",
+      "name": "dcpower_c_api_attributes_advanced",
       "type": "doc",
       "subtype": "programming_api",
       "device": "dcpower_c_api",
-      "description": "NI-DCPower C API — General Attributes & Events: Advanced settings (power source, isolation, interlock, calibration persistence), device-specific attributes (cable length), and Event attributes (Measure Complete, Pulse Complete, Source Complete, Sequence Engine Done, Sequence Iteration Complete, Ready for Pulse Trigger).",
+      "description": "NI-DCPower C API — Attributes: Advanced. Advanced session/channel attributes including active advanced sequence, auxiliary power source, isolation state, interlock state, power source, power source in use, and self-calibration persistence.",
       "language": "c",
       "category": "dcpower",
-      "api_section": "attributes_general"
+      "api_type": "attributes",
+      "api_section": "advanced"
     },
     {
-      "name": "dcpower_c_api_lcr",
+      "name": "dcpower_c_api_attributes_device_specific",
       "type": "doc",
       "subtype": "programming_api",
       "device": "dcpower_c_api",
-      "description": "NI-DCPower C API — LCR & Impedance: LCR measurement attributes (AC stimulus, AC dither, current/voltage range, aperture time, frequency, impedance range, source delay), LCR compensation attributes (open/short/load compensation, measured load reactance/resistance, DC bias), and instrument mode.",
+      "description": "NI-DCPower C API — Attributes: Device Specific. Device-specific attributes such as cable length for LCR-capable instruments.",
       "language": "c",
       "category": "dcpower",
+      "api_type": "attributes",
+      "api_section": "device_specific"
+    },
+    {
+      "name": "dcpower_c_api_attributes_events",
+      "type": "doc",
+      "subtype": "programming_api",
+      "device": "dcpower_c_api",
+      "description": "NI-DCPower C API — Attributes: Events. Event attributes for Measure Complete Event, Pulse Complete Event, Sequence Engine Done Event, and Source Complete Event — including output terminal, pulse polarity, pulse width, and high-level function references.",
+      "language": "c",
+      "category": "dcpower",
+      "api_type": "attributes",
+      "api_section": "events"
+    },
+    {
+      "name": "dcpower_c_api_attributes_inherent_ivi",
+      "type": "doc",
+      "subtype": "programming_api",
+      "device": "dcpower_c_api",
+      "description": "NI-DCPower C API — Attributes: Inherent IVI. Inherent IVI attributes (driver setup, group capabilities, instrument firmware/manufacturer/model, logical name, specific driver description/prefix/revision/vendor, supported instrument models) and User Options (cache, interchange check, query instrument status, range check, record coercions, simulate, driver setup).",
+      "language": "c",
+      "category": "dcpower",
+      "api_type": "attributes",
+      "api_section": "inherent_ivi"
+    },
+    {
+      "name": "dcpower_c_api_attributes_lcr",
+      "type": "doc",
+      "subtype": "programming_api",
+      "device": "dcpower_c_api",
+      "description": "NI-DCPower C API — Attributes: LCR. LCR measurement attributes (AC dither, AC stimulus frequency, current/voltage range, aperture time, DC bias, impedance auto range, impedance range, load capacitance, load inductance, load resistance, measurement time, open/short/load compensation, source delay mode) and instrument mode.",
+      "language": "c",
+      "category": "dcpower",
+      "api_type": "attributes",
       "api_section": "lcr"
     },
     {
-      "name": "dcpower_c_api_measure",
+      "name": "dcpower_c_api_attributes_measure",
       "type": "doc",
       "subtype": "programming_api",
       "device": "dcpower_c_api",
-      "description": "NI-DCPower C API — Measure: Measurement attributes including autorange, aperture time, aperture time units and auto-mode, measure when, measure record length/delta time, DC noise rejection, power line frequency, sense (local/remote), samples to average, and measure trigger configuration.",
+      "description": "NI-DCPower C API — Attributes: Measure. Measurement configuration attributes including autorange, autorange behavior, aperture time/units/auto-mode, compliance limit autorange, DC noise rejection, measure buffer size, measure when, measure record length/delta time, power line frequency, samples to average, and sense (local/remote). Also includes Measure Trigger attributes (digital edge trigger input/edge).",
       "language": "c",
       "category": "dcpower",
+      "api_type": "attributes",
       "api_section": "measure"
     },
     {
-      "name": "dcpower_c_api_source",
+      "name": "dcpower_c_api_attributes_source",
       "type": "doc",
       "subtype": "programming_api",
       "device": "dcpower_c_api",
-      "description": "NI-DCPower C API — Source & Triggers (Attributes): Source attributes (voltage/current level, limits, compliance, output function, output resistance, source mode, source delay, conduction voltage, transient response, overranging), constant power/resistance attributes, DC voltage/current attributes, pulse voltage/current attributes, output cutoff, trigger attributes (measure/pulse/sequence advance/shutdown/source/start triggers, digital edge configuration), and Supported Attributes by Device tables.",
+      "description": "NI-DCPower C API — Attributes: Source. Source configuration attributes (conduction voltage, compliance limits, current/voltage level & range, output cutoff/enabled/function/resistance, overranging, source delay, source mode, transient response), Constant Power attributes (power limit, compensation, gain bandwidth, pole-zero ratio), DC Voltage/Current attributes, Pulse Voltage/Current attributes, and Trigger configuration attributes (Measure/Pulse/Sequence Advance/Shutdown/Source/Start trigger input/edge/type).",
       "language": "c",
       "category": "dcpower",
+      "api_type": "attributes",
       "api_section": "source"
     },
     {
-      "name": "dcpower_c_api_functions",
+      "name": "dcpower_c_api_attributes_supported",
       "type": "doc",
       "subtype": "programming_api",
       "device": "dcpower_c_api",
-      "description": "NI-DCPower C API — Functions Reference: All C function signatures and parameters including Calibration (niDCPower_ChangeExtCalPassword, self-calibrate), LCR Compensation functions, Control (Abort, Commit, Initiate), Initialize/Close, Measure functions (ConfigureApertureTime, FetchMultiple, Measure, MeasureMultiple), Query functions (QueryLatchedOutputCutoffState, QueryMaxCurrentLimit, QueryMaxVoltageLevel, QueryOutputState), Set/Get Attribute, Source functions (ConfigureSourceMode, CreateAdvancedSequenceStep, SetSequence), Trigger/Event functions (ConfigureTrigger, SendSoftwareEdgeTrigger, ExportSignal, WaitForEvent), Utility, IVI, Locking, and obsolete/unsupported functions.",
+      "description": "NI-DCPower C API — Attributes: Supported Attributes by Device. Per-device tables listing default values and support status for all attributes across PXI-4110, PXI-4130, PXI-4132, PXIe-4112/4113, PXIe-4135, PXIe-4136/4137, PXIe-4138/4139, PXIe-4140/4141, PXIe-4142/4143, PXIe-4144/4145, PXIe-4147, PXIe-4150/4151, PXIe-4154, PXIe-4162/4163, and PXIe-4190.",
       "language": "c",
       "category": "dcpower",
-      "api_section": "functions"
+      "api_type": "attributes",
+      "api_section": "supported"
+    },
+    {
+      "name": "dcpower_c_api_functions_calibration",
+      "type": "doc",
+      "subtype": "programming_api",
+      "device": "dcpower_c_api",
+      "description": "NI-DCPower C API — Functions: Calibration. Calibration function signatures and parameters including niDCPower_CalAdjustCurrentLimit, CalAdjustCurrentMeasurement, CalAdjustInternalReference, CalAdjustOutputResistance, CalAdjustResidualCurrentOffset, CalAdjustResidualVoltageOffset, CalAdjustVoltageLevel, CalAdjustVoltageMeasurement, CalSelfCalibrate, ChangeExtCalPassword, CloseExtCal, ConnectInternalReference, InitExtCal. Also includes LCR Compensation functions (GetLCRCompensationData, GetLCRCompensationLastDateAndTime, ConfigureLCRCompensation, PerformLCROpenCustomCableCompensation, PerformLCROpen/Short/LoadCompensation, PerformLCRShortCustomCableCompensation).",
+      "language": "c",
+      "category": "dcpower",
+      "api_type": "functions",
+      "api_section": "calibration"
+    },
+    {
+      "name": "dcpower_c_api_functions_control",
+      "type": "doc",
+      "subtype": "programming_api",
+      "device": "dcpower_c_api",
+      "description": "NI-DCPower C API — Functions: Control. Control function signatures and parameters including niDCPower_Abort, AbortWithChannels, Commit, CommitWithChannels, Initiate, and InitiateWithChannels.",
+      "language": "c",
+      "category": "dcpower",
+      "api_type": "functions",
+      "api_section": "control"
+    },
+    {
+      "name": "dcpower_c_api_functions_init_close",
+      "type": "doc",
+      "subtype": "programming_api",
+      "device": "dcpower_c_api",
+      "description": "NI-DCPower C API — Functions: Initialize/Close. Session lifecycle function signatures and parameters including niDCPower_close and niDCPower_InitializeWithIndependentChannels.",
+      "language": "c",
+      "category": "dcpower",
+      "api_type": "functions",
+      "api_section": "init_close"
+    },
+    {
+      "name": "dcpower_c_api_functions_measure",
+      "type": "doc",
+      "subtype": "programming_api",
+      "device": "dcpower_c_api",
+      "description": "NI-DCPower C API — Functions: Measure. Measurement function signatures and parameters including niDCPower_ConfigureApertureTime, ConfigurePowerLineFrequency, FetchMultiple, FetchMultipleWithChannels, Measure, MeasureMultiple, MeasureMultipleWithChannels, and ConfigureOutputEnabled.",
+      "language": "c",
+      "category": "dcpower",
+      "api_type": "functions",
+      "api_section": "measure"
+    },
+    {
+      "name": "dcpower_c_api_functions_query",
+      "type": "doc",
+      "subtype": "programming_api",
+      "device": "dcpower_c_api",
+      "description": "NI-DCPower C API — Functions: Query. Query function signatures and parameters including niDCPower_ClearLatchedOutputCutoffState, QueryLatchedOutputCutoffState, QueryMaxCurrentLimit, QueryMaxVoltageLevel, QueryMinCurrentLimit, QueryOutputState.",
+      "language": "c",
+      "category": "dcpower",
+      "api_type": "functions",
+      "api_section": "query"
+    },
+    {
+      "name": "dcpower_c_api_functions_set_get_attribute",
+      "type": "doc",
+      "subtype": "programming_api",
+      "device": "dcpower_c_api",
+      "description": "NI-DCPower C API — Functions: Set/Get Attribute. Attribute accessor function signatures and parameters including niDCPower_GetAttributeViBoolean/ViInt32/ViInt64/ViReal64/ViString and niDCPower_SetAttributeViBoolean/ViInt32/ViInt64/ViReal64/ViString.",
+      "language": "c",
+      "category": "dcpower",
+      "api_type": "functions",
+      "api_section": "set_get_attribute"
+    },
+    {
+      "name": "dcpower_c_api_functions_source",
+      "type": "doc",
+      "subtype": "programming_api",
+      "device": "dcpower_c_api",
+      "description": "NI-DCPower C API — Functions: Source. Source configuration function signatures and parameters including niDCPower_CreateAdvancedSequence, CreateAdvancedSequenceStep, CreateAdvancedSequenceWithChannels, DeleteAdvancedSequence, SetSequence, ConfigureSourceMode; DC Current functions (ConfigureCurrentLevel, ConfigureCurrentLevelRange, ConfigureVoltageLimit, ConfigureVoltageLimitRange); DC Voltage functions (ConfigureVoltageLevel, ConfigureVoltageLevelRange, ConfigureCurrentLimit, ConfigureCurrentLimitRange); Pulse Current/Voltage functions.",
+      "language": "c",
+      "category": "dcpower",
+      "api_type": "functions",
+      "api_section": "source"
+    },
+    {
+      "name": "dcpower_c_api_functions_supported",
+      "type": "doc",
+      "subtype": "programming_api",
+      "device": "dcpower_c_api",
+      "description": "NI-DCPower C API — Functions: Supported Functions by Device. Per-device tables listing function support status across PXI-4110, PXIe-4051, PXIe-4112/4113, PXI-4130, PXI-4132, PXIe-4135, PXIe-4136/4137, PXIe-4138/4139, PXIe-4140/4141/4142/4143/4144/4145, PXIe-4147, PXIe-4150/4151, PXIe-4154, PXIe-4162/4163, PXIe-4190.",
+      "language": "c",
+      "category": "dcpower",
+      "api_type": "functions",
+      "api_section": "supported"
+    },
+    {
+      "name": "dcpower_c_api_functions_triggers_events",
+      "type": "doc",
+      "subtype": "programming_api",
+      "device": "dcpower_c_api",
+      "description": "NI-DCPower C API — Functions: Triggers and Events. Trigger and event function signatures and parameters including niDCPower_ConfigureDigitalEdgeMeasureTrigger, ConfigureDigitalEdgePulseTrigger, ConfigureDigitalEdgeSequenceAdvanceTrigger, ConfigureDigitalEdgeShutdownTrigger, ConfigureDigitalEdgeSourceTrigger, ConfigureDigitalEdgeStartTrigger, ConfigureSoftwareEdge*Trigger, Disable*Trigger, SendSoftwareEdgeTrigger, ExportSignal, WaitForEvent.",
+      "language": "c",
+      "category": "dcpower",
+      "api_type": "functions",
+      "api_section": "triggers_events"
+    },
+    {
+      "name": "dcpower_c_api_functions_utility",
+      "type": "doc",
+      "subtype": "programming_api",
+      "device": "dcpower_c_api",
+      "description": "NI-DCPower C API — Functions: Utility. Utility and IVI function signatures and parameters including niDCPower_ClearError, Disable, ErrorMessage, ExportAttributeConfigurationBuffer/File, ImportAttributeConfigurationBuffer/File, ResetDevice, ResetWithChannels, GetError, error_query, reset, revision_query, self_test, ConfigureOVP, ClearInterchangeWarnings, GetNextCoercionRecord, GetNextInterchangeWarning, ResetInterchangeCheck, ResetOutputProtection.",
+      "language": "c",
+      "category": "dcpower",
+      "api_type": "functions",
+      "api_section": "utility"
     }
   ]
 }

@@ -1,6 +1,6 @@
 ---
 name: device_qa_workflow
-version: "1.4"
+version: "1.5"
 type: workflow
 ---
 
@@ -49,7 +49,7 @@ When you receive a user question:
 1. Review the skill registry in your system prompt.
 2. Find the doc skill(s) where the `device` field matches your normalized device name AND the `subtype` matches the question type:
    - For specification questions → load the skill with `subtype: "specifications"` for that device.
-   - For user manual questions → load the skill with `subtype: "user_manual"` for that device
+   - For user manual questions (User Manual provides detailed descriptions of product functionality and step-by-step processes for use) → load the skill with `subtype: "user_manual"` for that device
    - For programming API questions → load the skill with `subtype: "programming_api"` for that device. If there is no device-specific programming_api doc, load the appropriate **section** of the category-level C API reference (see **Step 2d** below). Please also consider which programming language the user is asking about; if not specified, use the C API as the default choice.
    - For questions for asking suggestions on which device/devices is recommended → load all the relevant specifications skills
    - For questions requiring multiple → load all relevant skills
@@ -81,22 +81,51 @@ When you receive a user question:
 
 ### 2d — Programming API Section Routing (CRITICAL for C API)
 
-The NI-DCPower C API reference has been split into **five topic-specific sections** to avoid loading unnecessary content. When the user's question requires the C programming API (`subtype: "programming_api"`, `device: "dcpower_c_api"`), you MUST select the **smallest relevant section(s)** instead of loading all five. Use the `api_section` field in the skill registry to identify each section.
+The NI-DCPower C API reference has been reorganized into **two main types** — **Attributes** and **Functions** — each with fine-grained sub-type sections. When the user's question requires the C programming API (`subtype: "programming_api"`, `device: "dcpower_c_api"`), you MUST select the **relevant section(s)** based on the question topic. Use the `api_type` and `api_section` fields in the skill registry to identify each section.
 
-**Section routing rules — pick the section(s) that match the question topic:**
+**MANDATORY BASE DOCUMENTS:** You MUST ALWAYS load the following two documents for *every* C API related question, as they contain essential session lifecycle and utility functions required across the board:
+1. `dcpower_c_api_functions_utility`
+2. `dcpower_c_api_functions_init_close`
 
-| User question is about… | Load skill with `api_section` | Skill name |
+Load these two documents *in addition* to any of the specific topical sections identified below.
+
+#### Attribute Sections (`api_type: "attributes"`)
+
+Load these when the question is about **configuration, settings, properties, or attribute values** — NOT about function signatures or calling conventions.
+
+| User question is about… | `api_section` | Skill name |
 |---|---|---|
-| Power source, isolation, interlock, calibration persistence, cable length, **events** (Measure Complete, Pulse Complete, Source Complete, Sequence Engine Done, Sequence Iteration Complete, Ready for Pulse Trigger) | `attributes_general` | `dcpower_c_api_attributes_general` |
-| LCR measurements, impedance, AC stimulus, AC dither, LCR compensation (open/short/load), DC bias, instrument mode | `lcr` | `dcpower_c_api_lcr` |
-| Measurement configuration: autorange, aperture time, measure when, measure record, DC noise rejection, power line frequency, sense mode (local/remote) | `measure` | `dcpower_c_api_measure` |
-| Source configuration: voltage/current level & limits, compliance, output function, output resistance, source mode, source delay, conduction voltage, transient response, constant power/resistance, pulse voltage/current, DC voltage/current, output cutoff, **trigger attributes** (edge config, trigger type), supported attributes by device | `source` | `dcpower_c_api_source` |
-| C **function signatures**, parameters, return values: niDCPower_* functions (Calibrate, Abort, Commit, Initiate, Close, Measure, Fetch, Query, Set/Get Attribute, ConfigureSourceMode, SetSequence, ConfigureTrigger, ExportSignal, WaitForEvent, Reset, Disable, self_test), obsolete functions, supported functions by device | `functions` | `dcpower_c_api_functions` |
+| Active advanced sequence, auxiliary power source, isolation state, interlock state, power source, self-calibration persistence | `advanced` | `dcpower_c_api_attributes_advanced` |
+| Cable length, device-specific settings for LCR instruments | `device_specific` | `dcpower_c_api_attributes_device_specific` |
+| Events: Measure Complete, Pulse Complete, Sequence Engine Done, Source Complete — event output terminal, pulse polarity, pulse width | `events` | `dcpower_c_api_attributes_events` |
+| IVI driver setup, instrument model/firmware, driver capabilities, User Options (cache, range check, simulate, interchange check, record coercions) | `inherent_ivi` | `dcpower_c_api_attributes_inherent_ivi` |
+| LCR measurements, impedance, AC stimulus/dither, LCR aperture time, DC bias, impedance range, open/short/load compensation attributes, instrument mode | `lcr` | `dcpower_c_api_attributes_lcr` |
+| Measurement configuration: autorange, aperture time, measure when, measure record, DC noise rejection, power line frequency, sense mode (local/remote), samples to average, measure trigger attributes | `measure` | `dcpower_c_api_attributes_measure` |
+| Source configuration: voltage/current level & limits, compliance, output function, output resistance, source mode, source delay, conduction voltage, transient response, constant power/resistance, pulse voltage/current, DC voltage/current, output cutoff, **trigger attributes** (measure/pulse/sequence advance/shutdown/source/start trigger edge/type) | `source` | `dcpower_c_api_attributes_source` |
+| Which attributes are supported by a specific device, default attribute values per device | `supported` | `dcpower_c_api_attributes_supported` |
+
+#### Function Sections (`api_type: "functions"`)
+Load these when the question is about **programming, function signatures, parameters, return values, calling conventions, or code examples**. Only load the specific function sub-section(s) relevant to the question — do NOT load all function sections. 
+
+| User question is about… | `api_section` | Skill name |
+|---|---|---|
+| Calibration functions (CalAdjust*, CalSelfCalibrate, ChangeExtCalPassword, InitExtCal, CloseExtCal, ConnectInternalReference), LCR Compensation functions (GetLCRCompensationData, ConfigureLCRCompensation, PerformLCROpen/Short/LoadCompensation) | `calibration` | `dcpower_c_api_functions_calibration` |
+| Control functions: Abort, AbortWithChannels, Commit, CommitWithChannels, Initiate, InitiateWithChannels | `control` | `dcpower_c_api_functions_control` |
+| Session lifecycle: niDCPower_close, niDCPower_InitializeWithIndependentChannels | `init_close` | `dcpower_c_api_functions_init_close` |
+| Measurement functions: ConfigureApertureTime, ConfigurePowerLineFrequency, FetchMultiple, FetchMultipleWithChannels, Measure, MeasureMultiple, MeasureMultipleWithChannels, ConfigureOutputEnabled | `measure` | `dcpower_c_api_functions_measure` |
+| Query functions: ClearLatchedOutputCutoffState, QueryLatchedOutputCutoffState, QueryMaxCurrentLimit, QueryMaxVoltageLevel, QueryMinCurrentLimit, QueryOutputState | `query` | `dcpower_c_api_functions_query` |
+| Getting/setting attribute values: GetAttributeVi*, SetAttributeVi* | `set_get_attribute` | `dcpower_c_api_functions_set_get_attribute` |
+| Source functions: CreateAdvancedSequence, CreateAdvancedSequenceStep, DeleteAdvancedSequence, SetSequence, ConfigureSourceMode, ConfigureCurrentLevel/Limit, ConfigureVoltageLevel/Limit, Pulse Current/Voltage functions | `source` | `dcpower_c_api_functions_source` |
+| Which functions are supported by a specific device | `supported` | `dcpower_c_api_functions_supported` |
+| Trigger/Event functions: ConfigureDigitalEdge*Trigger, ConfigureSoftwareEdge*Trigger, Disable*Trigger, SendSoftwareEdgeTrigger, ExportSignal, WaitForEvent | `triggers_events` | `dcpower_c_api_functions_triggers_events` |
+| Utility functions: ClearError, Disable, ErrorMessage, ExportAttributeConfiguration*, ImportAttributeConfiguration*, ResetDevice, ResetWithChannels, self_test, revision_query, IVI functions (ConfigureOVP, ClearInterchangeWarnings, ResetOutputProtection) | `utility` | `dcpower_c_api_functions_utility` |
 
 **Important rules:**
-- **MANDATORY: Always load `dcpower_c_api_functions`** — Whenever the user asks ANY question related to the C API (programming, function calls, code examples, API usage, parameters, return values, or how to use any niDCPower_* function), you MUST **always** load `dcpower_c_api_functions` (`api_section: "functions"`) in addition to whichever attribute section(s) are relevant. The functions file contains all C function signatures, parameters, and return values that are essential for answering C API questions.
-- If the question spans multiple topics (e.g., "How do I configure aperture time and read measurements?"), load **both** the relevant attribute section (`measure`) **and** the functions section (`functions`).
-- If you are unsure which section applies, load the section whose description best matches the keywords in the user's question **plus** `dcpower_c_api_functions`. **Do NOT load all five sections.**
+- **Always load mandatory base documents** — As instructed above, `dcpower_c_api_functions_utility` and `dcpower_c_api_functions_init_close` must be loaded for every C API question. 
+- **Do NOT always load all other function docs** — For the remaining function sections, only load them when the user's question specifically requires function signatures, parameters, return values, or code examples. If the question is purely about what an attribute means, its possible values, or how a feature is configured, loading the relevant attribute section (alongside the mandatory base documents) is sufficient.
+- **Load function sections selectively** — When an additional function reference is needed, load only the specific function sub-section that matches the topic (e.g., load `dcpower_c_api_functions_measure` for measurement function details, NOT all 10 function sections).
+- If the question spans both attribute configuration and function usage (e.g., "How do I configure aperture time and read measurements?"), load the relevant **attribute** section (`measure`), the relevant **function** section (`measure`), and the mandatory base documents.
+- If you are unsure which section applies, match the question keywords against the section descriptions in the skill registry and load the **best-matching section(s)**. Do NOT load all 18 sections.
 - If the first section you load does not contain the answer, try the next most likely section before falling back to the iterative search in Step 2c.
 
 ---
@@ -105,7 +134,7 @@ The NI-DCPower C API reference has been split into **five topic-specific section
 
 1. Read the loaded document content carefully.
 2. Compose a clear, accurate answer based **solely** on the information found in the loaded documents. Do NOT guess or infer data if your search loop in Step 2c failed to find it.
-3. **Include inline citations**: Do NOT announce that you checked or referenced a specific document before providing the answer (e.g., never say "I checked the PXIe-4135 manual..."). Provide the answer directly and include citations as an inline reference link right beside the relevant result. Use the format: `[Source: {skill_name}, Section: {section_heading}]`.
+3. **Include inline citations**: Do NOT announce that you checked or referenced any document before providing the answer (e.g., never say "I checked the PXIe-4135 manual, or I checked NI official document..."). Provide the answer directly and include citations as an inline reference link right beside the relevant result. Use the format: `[Source: {skill_name}, Section: {section_heading}]`.
 4. **Code Snippet Policy**: Do NOT provide programming examples, API scripts, or code snippets unless the user *explicitly* requests them. If the user does request code, you must ONLY extract and provide the code verbatim from the loaded documentation. Do NOT write, guess, or synthesize new code from your base knowledge.
 
 5. **Response Structure & Formatting Rules**: You MUST strictly follow this exact markdown structure for EVERY response. Do not deviate. Use horizontal rules (`---`) to separate every section.
@@ -195,5 +224,3 @@ The NI-DCPower C API reference has been split into **five topic-specific section
 - **NEVER skip loading documents** — even if you think you know the answer, load the appropriate skill to verify and cite.
 - **NEVER load the workflow skill again** after the initial load — you already have it in context.
 - **NEVER fail to normalize device names** — always convert user input to the normalized form (lowercase, underscores) before matching against the registry.
-
-
