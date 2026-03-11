@@ -270,6 +270,8 @@ async def process_pdf(
                 return
 
             raw_md = md_file.read_text(encoding="utf-8")
+            if not raw_md.strip():
+                raise RuntimeError("MinerU produced an empty Markdown file. This could mean the PDF is scanned without OCR or the conversion failed silently.")
 
             # Copy images
             yield _sse({"type": "status", "step": "images", "message": "Copying extracted images..."})

@@ -168,10 +168,12 @@ def copy_images(source_images_dir: Path | None, target_images_dir: Path | None =
 # 3. LLM-based Markdown cleanup
 # ---------------------------------------------------------------------------
 
-CLEANUP_SYSTEM_PROMPT = """\
+CLEANUP_SYSTEM_PROMPT_old = """\
 You are a technical documentation editor. Your job is to clean up raw \
 Markdown that was produced by an OCR/PDF-to-Markdown tool (MinerU) and \
-convert it into LLM-friendly Markdown.
+convert it into LLM-friendly Markdown. And since the user will be using this \
+skill to answer questions via a LLM with limited context window, \
+make sure the Markdown is easy to parse and understand.
 
 Follow ALL of these rules:
 
@@ -197,8 +199,51 @@ Follow ALL of these rules:
    - Place them directly below their figure titles without excess blank lines.
    - Remove image refs that are just icons.
 
+6. **Consolidate Repetitive Boilerplate Warnings**
+
 Return ONLY the cleaned Markdown. Do not wrap in code fences. \
 Do not add commentary.\
+"""
+
+CLEANUP_SYSTEM_PROMPT = """
+You are an expert Technical Documentation Optimizer and Data Engineer. Your objective is to process raw, OCR-extracted hardware manuals, PDFs, and API documentation, converting them into hyper-efficient, cleanly structured Markdown. 
+
+This output will be used to build a Retrieval-Augmented Generation (RAG) knowledge base for a local LLM with a strict, limited context window. Every token matters. You must prioritize high information density, structural integrity, and absolutely zero formatting bloat.
+
+Apply the following STRICT RULES to your output:
+
+1. ELIMINATE MATHEMATICAL/LATEX BLOAT
+Never use LaTeX, MathJax, or heavy symbol wrappers (e.g., `$`, `\mathrm`, `\mathsf`) for basic units, numbers, or simple variables. 
+- BAD: `$6 0 0 \mathrm { k } \mathsf { S } / \mathsf { s }$` or `$1 0 0 \mathsf { k } \Omega$`
+- GOOD: `600 kS/s` or `100 kΩ`
+Only use LaTeX for complex, multi-line equations that cannot be represented in plain text.
+
+2. NATIVE MARKDOWN TABLES ONLY
+Absolutely NO HTML tags are allowed. Convert all `<table>`, `<tr>`, `<td>`, `colspan`, and `<br>` elements into clean, native Markdown tables (`| Column | Column |`). Keep the text inside the tables concise.
+
+3. AGGRESSIVE OCR CLEANUP
+Actively detect and fix OCR artifacts and rendering glitches. 
+- Fix stuttering headers (e.g., change `Making L Making Local Sense Me al Sense Measurements` to `Making Local Sense Measurements`).
+- Fix broken line breaks inside sentences.
+- Remove redundant page numbers, footers, and non-informative layout text.
+
+4. STRICT HIERARCHY FOR CHUNKING
+Use standard Markdown headings (`#`, `##`, `###`) to create a logical, nested structure. Ensure every section has a clear header, as this will be used by the downstream system for deterministic document chunking.
+
+5. BOILERPLATE CONDENSATION
+Condense repetitive, verbose warnings into concise blockquotes (e.g., `> **Note:**` or `> **Caution:**`) without losing the core technical constraints or safety parameters. Merge disjointed image captions directly into the relevant context.
+
+6. PRESERVE IMAGES AND DIAGRAMS
+Preserve all original image links exactly as they appear (e.g., `![](images/...)`). Insert short, descriptive bracketed text like `` near the image links to provide semantic context to the text-only LLM. 
+
+Output ONLY the optimized Markdown document. Do not include any conversational filler, preambles, or explanations of what you changed.
+
+7. AGGRESSIVE BOILERPLATE DELETION (LOSSY OPTIMIZATION)
+You have explicit permission to DELETE text that does not add unique technical value. Your goal is maximum information density.
+- DELETE repetitive introductory fluff (e.g., "The following table lists the...", "Complete the following steps to...").
+- CONSOLIDATE repeated warnings. If a safety warning appears 5 times in the document, keep it once in a global "Safety Guidelines" section and delete the rest.
+- DELETE obvious filler (e.g., "The User Manual provides detailed descriptions of the product functionality and the step by step processes for use.")
+- SUMMARIZE verbose paragraphs into punchy, single-line bullet points. 
 """
 
 
@@ -237,8 +282,15 @@ async def cleanup_md_with_llm(
         temperature=0.1,
     )
 
-    cleaned = response.choices[0].message.content or ""
-    logger.info("LLM cleanup returned %d chars", len(cleaned))
+    choice = response.choices[0]
+    cleaned = choice.message.content or ""
+    
+    if not cleaned.strip():
+        finish_reason = getattr(choice, "finish_reason", "unknown")
+        logger.error("LLM cleanup returned empty content. Finish reason: %s", finish_reason)
+        raise RuntimeError(f"LLM returned an empty response (finish_reason: {finish_reason}). The payload might have triggered a safety filter or exceeded context limits.")
+        
+    logger.info("LLM cleanup returned %d chars (finish_reason: %s)", len(cleaned), getattr(choice, "finish_reason", "unknown"))
     return cleaned.strip()
 
 
