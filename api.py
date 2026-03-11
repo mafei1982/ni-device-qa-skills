@@ -216,9 +216,18 @@ async def delete_skill(skill_name: str):
         json.dump(registry, f, ensure_ascii=False, indent=2)
         f.write("\n")
 
-    # Remove file
+    # Remove referenced images
     file_path = SKILLS_DIR / "docs" / f"{skill_name}.md"
     if file_path.exists():
+        md_content = file_path.read_text(encoding="utf-8")
+        referenced = set(doc_processor._IMAGE_REF_RE.findall(md_content))
+        for img_name in referenced:
+            img_path = IMAGES_DIR / img_name
+            if img_path.exists():
+                img_path.unlink()
+                logger.info("Deleted image: %s", img_path)
+
+        # Remove the markdown file
         file_path.unlink()
 
     return {"deleted": skill_name}
@@ -275,7 +284,7 @@ async def process_pdf(
 
             # Copy images
             yield _sse({"type": "status", "step": "images", "message": "Copying extracted images..."})
-            img_count = doc_processor.copy_images(images_dir)
+            img_count = doc_processor.copy_images(images_dir, raw_md)
 
             # Report estimated tokens
             est_tokens = doc_processor.estimate_tokens(raw_md)

@@ -11,15 +11,18 @@ Handles:
 from __future__ import annotations
 
 import json
+from collections import deque
 import logging
 import re
 import shutil
 import subprocess
 import tempfile
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
 from openai import AsyncOpenAI
+import pypdf
 
 logger = logging.getLogger("ni_device_qa.doc_processor")
 
@@ -53,55 +56,36 @@ def _has_gpu() -> bool:
         return False
 
 
-def convert_pdf_to_md(pdf_path: Path, output_dir: Path | None = None) -> tuple[Path, Path | None]:
-    """Convert a PDF to Markdown using the MinerU CLI.
+def _split_pdf(pdf_path: Path, output_dir: Path, chunk_size: int = 100) -> list[Path]:
+    """Split a PDF into smaller chunks of at most `chunk_size` pages."""
+    reader = pypdf.PdfReader(pdf_path)
+    total_pages = len(reader.pages)
+    
+    if total_pages <= chunk_size:
+        return [pdf_path]
+        
+    logger.info("Splitting %s (%d pages) into %d-page chunks...", pdf_path.name, total_pages, chunk_size)
+    chunks = []
+    
+    for start_idx in range(0, total_pages, chunk_size):
+        end_idx = min(start_idx + chunk_size, total_pages)
+        writer = pypdf.PdfWriter()
+        for i in range(start_idx, end_idx):
+            writer.add_page(reader.pages[i])
+            
+        chunk_path = output_dir / f"{pdf_path.stem}_part{start_idx // chunk_size + 1}.pdf"
+        with open(chunk_path, "wb") as f:
+            writer.write(f)
+        chunks.append(chunk_path)
+        
+    return chunks
 
-    Automatically selects GPU or CPU backend based on CUDA availability.
-    Returns (md_file_path, images_dir_or_None).
+
+def _find_mineru_output(output_dir: Path, pdf_stem: str) -> tuple[Path | None, Path | None]:
+    """Locate MinerU output files (MD and images dir) in the output directory.
+
+    Returns (md_file_or_None, images_dir_or_None).
     """
-    if output_dir is None:
-        output_dir = Path(tempfile.mkdtemp(prefix="mineru_"))
-
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    # Detect GPU availability and choose backend
-    use_gpu = _has_gpu()
-    cmd = ["mineru", "-p", str(pdf_path), "-o", str(output_dir)]
-    if not use_gpu:
-        cmd += ["-b", "pipeline"]
-
-    mode_label = "GPU" if use_gpu else "CPU (pipeline)"
-    logger.info("Running MinerU (%s mode): %s", mode_label, " ".join(cmd))
-
-    timeout_secs = 600 if use_gpu else 1800  # 10 min GPU, 30 min CPU
-
-    try:
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=timeout_secs,
-        )
-        if result.returncode != 0:
-            raise RuntimeError(
-                f"MinerU conversion failed (rc={result.returncode}):\n"
-                f"{result.stderr[:1000]}"
-            )
-    except subprocess.TimeoutExpired:
-        raise RuntimeError(
-            f"MinerU conversion timed out after {timeout_secs // 60} minutes "
-            f"({mode_label} mode). The PDF may be too large for CPU processing. "
-            f"Consider using a machine with a CUDA GPU for faster conversion."
-        )
-    except FileNotFoundError:
-        raise RuntimeError(
-            "MinerU CLI ('mineru') not found. "
-            "Install it with: uv pip install -U 'mineru[all]'"
-        )
-
-    # MinerU outputs into a subfolder named after the PDF stem
-    pdf_stem = pdf_path.stem
-    # Look for the generated MD file
     candidate_dirs = [
         output_dir / pdf_stem / "auto",
         output_dir / pdf_stem,
@@ -119,19 +103,207 @@ def convert_pdf_to_md(pdf_path: Path, output_dir: Path | None = None) -> tuple[P
     if md_file is None:
         # Search recursively as a fallback
         md_files = list(output_dir.rglob("*.md"))
-        if not md_files:
-            raise RuntimeError(
-                f"MinerU produced no Markdown files in {output_dir}"
-            )
-        md_file = md_files[0]
+        if md_files:
+            md_file = md_files[0]
 
-    # Find images directory (MinerU typically puts images next to the MD)
-    images_dir = md_file.parent / "images"
-    if not images_dir.is_dir():
-        images_dir = None
+    images_dir: Path | None = None
+    if md_file is not None:
+        candidate_img = md_file.parent / "images"
+        if candidate_img.is_dir():
+            images_dir = candidate_img
+
+    return md_file, images_dir
+
+
+# Patterns that indicate a vLLM / GPU engine shutdown message rather than
+# a real MinerU processing failure.  These are checked against the last few
+# lines of combined stdout/stderr to decide whether a non-zero exit code
+# can be tolerated.
+_VLLM_SHUTDOWN_PATTERNS = [
+    "EngineCore",
+    "died unexpectedly",
+    "shutting down client",
+    "AsyncEngineDeadError",
+    "core_client",
+]
+
+
+def _run_mineru_single(pdf_path: Path, output_dir: Path, use_gpu: bool) -> tuple[Path, Path | None]:
+    """Run MinerU on a single PDF file (or chunk).
+    
+    Returns (md_file_path, images_dir_or_None).
+    """
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    cmd = ["mineru", "-p", str(pdf_path), "-o", str(output_dir)]
+    if not use_gpu:
+        cmd += ["-b", "pipeline"]
+
+    mode_label = "GPU" if use_gpu else "CPU (pipeline)"
+    logger.info("Running MinerU (%s mode): %s", mode_label, " ".join(cmd))
+
+    # Keep the last N lines of output so we can inspect them if the process
+    # exits with a non-zero code (e.g. vLLM engine crash on WSL).
+    tail_lines: deque[str] = deque(maxlen=30)
+
+    try:
+        with subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+        ) as process:
+            if process.stdout:
+                for line in process.stdout:
+                    stripped = line.rstrip()
+                    tail_lines.append(stripped)
+                    logger.info("MinerU: %s", stripped)
+            
+            process.wait()
+            returncode = process.returncode
+    except FileNotFoundError:
+        raise RuntimeError(
+            "MinerU CLI ('mineru') not found. "
+            "Install it with: uv pip install -U 'mineru[all]'"
+        )
+
+    pdf_stem = pdf_path.stem
+
+    if returncode != 0:
+        # -----------------------------------------------------------------
+        # Non-zero exit.  On WSL with vLLM-backed MinerU the GPU engine
+        # (EngineCore_DP0) is often killed by Linux's aggressive background
+        # process cleanup *after* MinerU has finished writing all output
+        # files.  The vLLM client then panics and causes a non-zero exit
+        # even though the conversion is 100 % complete.
+        #
+        # Strategy: check whether the expected output Markdown file already
+        # exists.  If it does, treat this as a harmless noisy shutdown and
+        # emit a warning instead of raising.
+        # -----------------------------------------------------------------
+        md_file, images_dir = _find_mineru_output(output_dir, pdf_stem)
+
+        tail_text = "\n".join(tail_lines)
+        looks_like_vllm_crash = any(
+            pat in tail_text for pat in _VLLM_SHUTDOWN_PATTERNS
+        )
+
+        if md_file is not None and md_file.stat().st_size > 0:
+            # Output exists → conversion succeeded despite the messy exit.
+            if looks_like_vllm_crash:
+                logger.warning(
+                    "MinerU exited with rc=%d due to vLLM GPU engine "
+                    "shutdown (likely WSL cleanup). Output file %s was "
+                    "already written — treating as success.",
+                    returncode, md_file,
+                )
+            else:
+                logger.warning(
+                    "MinerU exited with rc=%d but output file %s exists "
+                    "(%d bytes). Proceeding despite non-zero exit code. "
+                    "Last output lines:\n%s",
+                    returncode, md_file, md_file.stat().st_size, tail_text,
+                )
+            logger.info("MinerU output: md=%s, images=%s", md_file, images_dir)
+            return md_file, images_dir
+
+        # No output produced → this is a genuine failure.
+        raise RuntimeError(
+            f"MinerU conversion failed (rc={returncode}). "
+            f"No output Markdown found in {output_dir}.\n"
+            f"Last output:\n{tail_text}"
+        )
+
+    # Happy path: process exited cleanly.
+    md_file, images_dir = _find_mineru_output(output_dir, pdf_stem)
+
+    if md_file is None:
+        raise RuntimeError(
+            f"MinerU produced no Markdown files in {output_dir}"
+        )
 
     logger.info("MinerU output: md=%s, images=%s", md_file, images_dir)
     return md_file, images_dir
+
+
+def convert_pdf_to_md(
+    pdf_path: Path,
+    output_dir: Path | None = None,
+    progress_callback: Callable[[int, int], None] | None = None,
+) -> tuple[Path, Path | None]:
+    """Convert a PDF to Markdown using the MinerU CLI.
+    
+    Automatically handles splitting large PDFs into chunks to prevent MinerU
+    from crashing or stalling, processes them sequentially, and merges the results.
+    """
+    if output_dir is None:
+        output_dir = Path(tempfile.mkdtemp(prefix="mineru_"))
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    # 1. Split PDF into chunks (<= 100 pages)
+    chunks = _split_pdf(pdf_path, output_dir, chunk_size=100)
+    
+    use_gpu = _has_gpu()
+    combined_md_content = []
+    has_images = False
+    
+    master_images_dir = output_dir / f"{pdf_path.stem}_images"
+    master_images_dir.mkdir(parents=True, exist_ok=True)
+    
+    for i, chunk_path in enumerate(chunks, 1):
+        if progress_callback:
+            progress_callback(i, len(chunks))
+            
+        logger.info("Processing chunk %d of %d: %s", i, len(chunks), chunk_path.name)
+        
+        # MinerU output folder for this specific chunk
+        chunk_out_dir = output_dir / f"chunk_{i}"
+        
+        try:
+            md_file, images_dir = _run_mineru_single(chunk_path, chunk_out_dir, use_gpu)
+            
+            # Read chunk markdown and append
+            chunk_md = md_file.read_text(encoding="utf-8")
+            combined_md_content.append(chunk_md)
+            
+            # Copy chunk images to master images dir
+            if images_dir and images_dir.is_dir():
+                has_images = True
+                for img in images_dir.iterdir():
+                    if img.is_file():
+                        # We might have name collisions if MinerU numbers images
+                        # purely by sequence per file. We can prefix them with chunk num.
+                        new_img_name = f"c{i}_{img.name}"
+                        dest_img = master_images_dir / new_img_name
+                        shutil.copy2(img, dest_img)
+                        
+                        # Update the markdown to reference the new image name
+                        # MinerU outputs image references usually as ![](images/something.jpg) or <img src="images/something.jpg">
+                        # We'll do a simple string replace for the image filename
+                        chunk_md = md_file.read_text(encoding="utf-8")
+                        chunk_md = chunk_md.replace(
+                            f"images/{img.name}", f"images/{new_img_name}"
+                        ).replace(
+                            f"images\\{img.name}", f"images/{new_img_name}"
+                        )
+                
+                # Update chunk_md in the combined list
+                combined_md_content[-1] = chunk_md
+
+        except Exception as e:
+            logger.error("Failed processing chunk %d: %s", i, e)
+            raise RuntimeError(f"Conversion failed at chunk {i} of {len(chunks)}: {e}") from e
+            
+    # Write combined markdown
+    final_md_path = output_dir / f"{pdf_path.stem}_combined.md"
+    final_md_path.write_text("\n\n---\n\n".join(combined_md_content), encoding="utf-8")
+    
+    final_images_dir = master_images_dir if has_images else None
+    
+    logger.info("Finished PDF conversion: %s", final_md_path)
+    return final_md_path, final_images_dir
 
 
 # ---------------------------------------------------------------------------
@@ -139,8 +311,18 @@ def convert_pdf_to_md(pdf_path: Path, output_dir: Path | None = None) -> tuple[P
 # ---------------------------------------------------------------------------
 
 
-def copy_images(source_images_dir: Path | None, target_images_dir: Path | None = None) -> int:
+_IMAGE_REF_RE = re.compile(r"images[/\\]([^\s\)\"'>]+)", re.IGNORECASE)
+
+
+def copy_images(
+    source_images_dir: Path | None,
+    md_content: str = "",
+    target_images_dir: Path | None = None,
+) -> int:
     """Copy extracted images to the skills images directory.
+
+    Only images whose filenames are referenced in *md_content* are copied.
+    If *md_content* is empty, all images are copied (legacy behaviour).
 
     Returns the number of images copied.
     """
@@ -151,11 +333,20 @@ def copy_images(source_images_dir: Path | None, target_images_dir: Path | None =
         target_images_dir = IMAGES_DIR
     target_images_dir.mkdir(parents=True, exist_ok=True)
 
+    # Build set of referenced image filenames from the markdown
+    referenced: set[str] | None = None
+    if md_content:
+        referenced = set(_IMAGE_REF_RE.findall(md_content))
+        logger.info("Found %d referenced images in markdown", len(referenced))
+
     count = 0
     for img in source_images_dir.iterdir():
         if img.is_file() and img.suffix.lower() in (
             ".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".bmp",
         ):
+            # Skip images not referenced in the markdown
+            if referenced is not None and img.name not in referenced:
+                continue
             dest = target_images_dir / img.name
             shutil.copy2(img, dest)
             count += 1
