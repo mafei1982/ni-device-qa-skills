@@ -282,20 +282,20 @@ async def process_pdf(
             if not raw_md.strip():
                 raise RuntimeError("MinerU produced an empty Markdown file. This could mean the PDF is scanned without OCR or the conversion failed silently.")
 
-            # Copy images
-            yield _sse({"type": "status", "step": "images", "message": "Copying extracted images..."})
-            img_count = doc_processor.copy_images(images_dir, raw_md)
-
-            # Report estimated tokens
-            est_tokens = doc_processor.estimate_tokens(raw_md)
-            yield _sse({
-                "type": "token_estimate",
-                "chars": len(raw_md),
-                "estimated_tokens": est_tokens,
-                "images_copied": img_count,
-            })
-
             if subtype in ("user_manual", "specifications"):
+                # Copy images (only for non-API docs)
+                yield _sse({"type": "status", "step": "images", "message": "Copying extracted images..."})
+                img_count = doc_processor.copy_images(images_dir, raw_md)
+
+                # Report estimated tokens
+                est_tokens = doc_processor.estimate_tokens(raw_md)
+                yield _sse({
+                    "type": "token_estimate",
+                    "chars": len(raw_md),
+                    "estimated_tokens": est_tokens,
+                    "images_copied": img_count,
+                })
+
                 # Step 2: LLM cleanup
                 yield _sse({"type": "status", "step": "cleaning", "message": f"Cleaning markdown with {DOC_PROCESS_MODEL}..."})
                 try:
@@ -332,7 +332,20 @@ async def process_pdf(
                 yield _sse({"type": "done", "skills": [entry]})
 
             elif subtype == "programming_api":
-                # For API docs: first save the raw/cleaned MD, then suggest splits
+                # For API docs: skip image copy (images are just icons),
+                # strip all image links, save, then suggest splits.
+                yield _sse({"type": "status", "step": "cleaning_images", "message": "Stripping icon image links from API doc..."})
+                raw_md = doc_processor.strip_image_links(raw_md)
+
+                # Report estimated tokens (after stripping images)
+                est_tokens = doc_processor.estimate_tokens(raw_md)
+                yield _sse({
+                    "type": "token_estimate",
+                    "chars": len(raw_md),
+                    "estimated_tokens": est_tokens,
+                    "images_copied": 0,
+                })
+
                 yield _sse({"type": "status", "step": "saving_raw", "message": "Saving converted API doc..."})
                 skill_name = f"{device_slug}_programming_api"
                 doc_path = SKILLS_DIR / "docs" / f"{skill_name}.md"

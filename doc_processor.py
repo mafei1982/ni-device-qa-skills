@@ -389,6 +389,30 @@ def copy_images(
     return count
 
 
+# Matches Markdown image syntax: ![alt text](images/something.png)
+# Also matches HTML img tags referencing local images.
+_MD_IMAGE_LINK_RE = re.compile(
+    r"!\[[^\]]*\]\([^)]*images[/\\][^)]+\)\s*", re.IGNORECASE
+)
+_HTML_IMG_RE = re.compile(
+    r"<img\s[^>]*src=[\"'][^\"']*images[/\\][^\"']+[\"'][^>]*/?\s*>\s*",
+    re.IGNORECASE,
+)
+
+
+def strip_image_links(md_content: str) -> str:
+    """Remove all image links from Markdown content.
+
+    Strips both ``![...](images/...)`` and ``<img src="images/...">`` tags.
+    Blank lines left behind after removal are collapsed.
+    """
+    result = _MD_IMAGE_LINK_RE.sub("", md_content)
+    result = _HTML_IMG_RE.sub("", result)
+    # Collapse runs of 3+ newlines into 2
+    result = re.sub(r"\n{3,}", "\n\n", result)
+    return result
+
+
 # ---------------------------------------------------------------------------
 # 3. LLM-based Markdown cleanup
 # ---------------------------------------------------------------------------
