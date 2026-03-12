@@ -145,9 +145,9 @@ export default function SkillsRegistry() {
   const isPdf = uploadFile?.name.toLowerCase().endsWith(".pdf") ?? false;
   const isMd = uploadFile?.name.toLowerCase().endsWith(".md") ?? false;
   const showCleanSplitOption = isMd && uploadSubtype === "programming_api";
-  const showLlmSplitOption = uploadSubtype === "programming_api" && (isPdf || (isMd && wantsCleanSplit));
   const [wantsCleanSplit, setWantsCleanSplit] = useState(false);
   const [wantsLlmSplit, setWantsLlmSplit] = useState(false);
+  const showLlmSplitOption = uploadSubtype === "programming_api" && (isPdf || (isMd && wantsCleanSplit));
 
   function fetchSkills() {
     setLoading(true);
