@@ -42,17 +42,51 @@ TOP_HEADING_RE = re.compile(r"^(#{1,6})\s+(.+)", re.MULTILINE)
 
 
 def _has_gpu() -> bool:
-    """Check whether a CUDA-capable GPU is available."""
+    """Check whether a CUDA-capable GPU is available for MinerU.
+
+    MinerU uses vLLM (not raw PyTorch) for GPU-accelerated inference.
+    We check two things:
+      1. vLLM is installed (required for MinerU GPU mode).
+      2. The machine has an NVIDIA CUDA GPU (via ``nvidia-smi``).
+
+    We intentionally do NOT use ``torch.cuda.is_available()`` because
+    torch may have been built without CUDA support even on a machine
+    that has a perfectly usable NVIDIA GPU.
+    """
+    # 1. Is vLLM importable?
     try:
-        import torch
-        available = torch.cuda.is_available()
-        if available:
-            logger.info("CUDA GPU detected: %s", torch.cuda.get_device_name(0))
-        else:
-            logger.info("No CUDA GPU detected, will use CPU pipeline")
-        return available
+        import vllm  # noqa: F401
+        logger.info("vLLM is installed — checking for NVIDIA GPU hardware")
     except ImportError:
-        logger.info("PyTorch not installed, assuming no GPU — will use CPU pipeline")
+        logger.info("vLLM not installed, assuming no GPU — will use CPU pipeline")
+        return False
+
+    # 2. Does the machine have an NVIDIA GPU?
+    try:
+        result = subprocess.run(
+            ["nvidia-smi", "--query-gpu=name", "--format=csv,noheader"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            gpu_name = result.stdout.strip().splitlines()[0]
+            logger.info("vLLM + NVIDIA GPU detected: %s", gpu_name)
+            return True
+        else:
+            logger.info(
+                "vLLM installed but nvidia-smi reported no GPUs — will use CPU pipeline"
+            )
+            return False
+    except FileNotFoundError:
+        logger.info(
+            "vLLM installed but nvidia-smi not found — will use CPU pipeline"
+        )
+        return False
+    except subprocess.TimeoutExpired:
+        logger.warning(
+            "nvidia-smi timed out — assuming no GPU, will use CPU pipeline"
+        )
         return False
 
 
