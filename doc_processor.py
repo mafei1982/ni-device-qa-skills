@@ -514,10 +514,19 @@ def html_tables_to_md(md_content: str) -> str:
 #   NIDCPOWER_ATTR_AUXILIARY_POWER_SOURCE_AVAILABLE . . . . . . . . . 22
 #   Some Section Title .................. 14
 #   niDCPower_ConfigureOutputEnabled  . . . . .  35
-# The pattern requires at least 3 consecutive ". " or "." sequences
-# followed by a page number near the end of the line.
+#   Pulse Current . . 952
+#   niDCPower_ConfigureSourceMode . 988
+#   niDCPower_ConfigureDigitalEdgeSequenceAdvanceTriggerWithChannels 1180
+# The pattern matches either:
+#   1) text with at least one dot leader followed by a page number, or
+#   2) a bare underscore-identifier (function name) followed by a page number.
 _TOC_LINE_RE = re.compile(
-    r"^.*(?:\.\s*){3,}\s*\d+\s*$", re.MULTILINE
+    r"^(?:"
+    r".*\s\.[\s.]*\d+"           # text, space, dot(s), page number
+    r"|"
+    r"\s*\w+_\w+\s+\d{2,}"      # identifier_name followed by page number (no dots)
+    r")\s*$",
+    re.MULTILINE,
 )
 
 
@@ -692,7 +701,9 @@ simply defining the logical "cut points" to slice the document from top to botto
 
 Return a JSON array where each element represents a new file chunk in sequential order. \
 Each element must have:
-- "filename": a snake_case .md filename (e.g., "01_device_initialization.md", "02_ni_dcpower_measure.md").
+- "filename": a snake_case .md filename using the format ``{filename_prefix}_<section>.md`` \
+where ``<section>`` is a short, descriptive snake_case label for the chunk \
+(e.g., "{filename_prefix}_functions_measure.md", "{filename_prefix}_attributes_source.md").
 - "title": a human-readable title for the section (used as the H1 in the output).
 - "start_heading": The exact text of the heading where this chunk begins (excluding the `#` characters).
 
@@ -720,6 +731,8 @@ async def suggest_api_split(
     api_key: str,
     model: str,
     device_slug: str = "",
+    category: str = "",
+    language: str = "",
 ) -> list[dict[str, Any]]:
     """Ask an LLM to analyze API doc headers and suggest split points.
 
@@ -729,6 +742,22 @@ async def suggest_api_split(
     headers_text = _extract_headers(raw_md)
     if not headers_text.strip():
         raise ValueError("No Markdown headers found in the document.")
+
+    # Build the filename prefix from category and language
+    cat_slug = re.sub(r"[^a-z0-9]+", "_", category.lower()).strip("_") if category.strip() else ""
+    lang_slug = re.sub(r"[^a-z0-9]+", "_", language.lower()).strip("_") if language.strip() else ""
+    if cat_slug and lang_slug:
+        filename_prefix = f"{cat_slug}_{lang_slug}"
+    elif cat_slug:
+        filename_prefix = cat_slug
+    elif lang_slug:
+        filename_prefix = lang_slug
+    else:
+        filename_prefix = device_slug or "api"
+
+    system_prompt = SPLIT_ANALYSIS_SYSTEM_PROMPT.replace(
+        "{filename_prefix}", filename_prefix
+    )
 
     client = AsyncOpenAI(base_url=api_url, api_key=api_key)
 
@@ -742,7 +771,7 @@ async def suggest_api_split(
     response = await client.chat.completions.create(
         model=model,
         messages=[
-            {"role": "system", "content": SPLIT_ANALYSIS_SYSTEM_PROMPT},
+            {"role": "system", "content": system_prompt},
             {
                 "role": "user",
                 "content": (
@@ -774,6 +803,14 @@ async def suggest_api_split(
 
     if not isinstance(splits, list):
         raise ValueError("LLM split suggestions must be a JSON array.")
+
+    # Normalize filenames to ensure they follow {prefix}_{section}.md format
+    for sdef in splits:
+        fn = sdef.get("filename", "")
+        if fn and not fn.startswith(filename_prefix + "_"):
+            # Strip any leading numbering (e.g., "01_") the LLM may have added
+            section = re.sub(r"^\d+_", "", fn.removesuffix(".md"))
+            sdef["filename"] = f"{filename_prefix}_{section}.md"
 
     logger.info("LLM suggested %d split sections", len(splits))
     return splits

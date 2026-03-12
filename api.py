@@ -233,6 +233,53 @@ async def delete_skill(skill_name: str):
     return {"deleted": skill_name}
 
 
+@app.post("/api/skills/delete-batch")
+async def delete_skills_batch(req: dict):
+    """Delete multiple doc skills from the registry and filesystem."""
+    names: list[str] = req.get("names", [])
+    if not names:
+        raise HTTPException(status_code=400, detail="No skill names provided.")
+
+    with open(METADATA_PATH, encoding="utf-8") as f:
+        registry = json.load(f)
+
+    existing = {s["name"]: s for s in registry["skills"]}
+    deleted = []
+    skipped = []
+
+    for name in names:
+        entry = existing.get(name)
+        if entry is None:
+            skipped.append({"name": name, "reason": "not found"})
+            continue
+        if entry["type"] != "doc":
+            skipped.append({"name": name, "reason": "not a doc skill"})
+            continue
+
+        # Remove referenced images
+        file_path = SKILLS_DIR / "docs" / f"{name}.md"
+        if file_path.exists():
+            md_content = file_path.read_text(encoding="utf-8")
+            referenced = set(doc_processor._IMAGE_REF_RE.findall(md_content))
+            for img_name in referenced:
+                img_path = IMAGES_DIR / img_name
+                if img_path.exists():
+                    img_path.unlink()
+                    logger.info("Deleted image: %s", img_path)
+            file_path.unlink()
+
+        del existing[name]
+        deleted.append(name)
+
+    # Write updated registry
+    registry["skills"] = list(existing.values())
+    with open(METADATA_PATH, "w", encoding="utf-8") as f:
+        json.dump(registry, f, ensure_ascii=False, indent=2)
+        f.write("\n")
+
+    return {"deleted": deleted, "skipped": skipped}
+
+
 # ---------------------------------------------------------------------------
 # PDF Processing
 # ---------------------------------------------------------------------------
@@ -360,6 +407,8 @@ async def process_pdf(
                         DOC_PROCESS_API_KEY,
                         DOC_PROCESS_MODEL,
                         device_slug=device_slug,
+                        category=category,
+                        language=language,
                     )
                 except Exception as e:
                     yield _sse({"type": "error", "message": f"Split analysis failed: {e}"})
@@ -437,6 +486,8 @@ async def process_md(
                     DOC_PROCESS_API_KEY,
                     DOC_PROCESS_MODEL,
                     device_slug=device_slug,
+                    category=category,
+                    language=language,
                 )
             except Exception as e:
                 yield _sse({"type": "error", "message": f"Split analysis failed: {e}"})

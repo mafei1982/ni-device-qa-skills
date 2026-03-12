@@ -15,6 +15,7 @@ import {
   getSkillContent,
   uploadDocSkill,
   deleteSkill,
+  deleteSkillsBatch,
   processPdfSkill,
   processMdSkill,
   splitApiDoc,
@@ -105,6 +106,30 @@ export default function SkillsRegistry() {
 
   // Delete state
   const [deleting, setDeleting] = useState<string | null>(null);
+
+  // Multi-select state
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [batchDeleting, setBatchDeleting] = useState(false);
+
+  const docSkills = skills.filter((s) => s.type === "doc");
+  const allDocSelected = docSkills.length > 0 && docSkills.every((s) => selected.has(s.name));
+
+  function toggleSelect(name: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    if (allDocSelected) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(docSkills.map((s) => s.name)));
+    }
+  }
 
   const isPdf = uploadFile?.name.toLowerCase().endsWith(".pdf") ?? false;
   const isMd = uploadFile?.name.toLowerCase().endsWith(".md") ?? false;
@@ -391,6 +416,32 @@ export default function SkillsRegistry() {
     }
   }
 
+  async function handleBatchDelete() {
+    const names = Array.from(selected);
+    if (names.length === 0) return;
+    if (
+      !window.confirm(
+        `Delete ${names.length} doc skill(s)? This will remove the files and registry entries.`
+      )
+    )
+      return;
+    setBatchDeleting(true);
+    try {
+      const res = await deleteSkillsBatch(names);
+      if (res.skipped.length > 0) {
+        alert(
+          `Deleted ${res.deleted.length} skill(s). Skipped ${res.skipped.length}: ${res.skipped.map((s) => `${s.name} (${s.reason})`).join(", ")}`
+        );
+      }
+      setSelected(new Set());
+      fetchSkills();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Batch delete failed.");
+    } finally {
+      setBatchDeleting(false);
+    }
+  }
+
   return (
     <section>
       <div className="flex items-center justify-between mb-4">
@@ -653,15 +704,65 @@ export default function SkillsRegistry() {
         </div>
       )}
 
+      {!loading && !error && selected.size > 0 && (
+        <div className="mb-3 flex items-center gap-3 bg-red-50 border border-red-200 rounded-lg px-4 py-2">
+          <span className="text-sm text-red-700 font-medium">
+            {selected.size} selected
+          </span>
+          <button
+            onClick={handleBatchDelete}
+            disabled={batchDeleting}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-medium hover:bg-red-700 disabled:bg-red-300 disabled:cursor-not-allowed transition-colors"
+          >
+            {batchDeleting ? (
+              <Loader2 size={13} className="animate-spin" />
+            ) : (
+              <Trash2 size={13} />
+            )}
+            Delete Selected
+          </button>
+          <button
+            onClick={() => setSelected(new Set())}
+            className="text-xs text-gray-500 hover:text-gray-700 transition-colors"
+          >
+            Clear
+          </button>
+        </div>
+      )}
+
       {!loading && !error && (
         <div className="grid grid-cols-1 gap-3">
+          {docSkills.length > 0 && (
+            <label className="flex items-center gap-2 text-xs text-gray-500 cursor-pointer select-none px-1">
+              <input
+                type="checkbox"
+                checked={allDocSelected}
+                onChange={toggleSelectAll}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              Select all doc skills
+            </label>
+          )}
           {skills.map((skill) => (
             <div
               key={skill.name}
-              className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex flex-col gap-2"
+              className={`bg-white border rounded-xl p-4 shadow-sm flex flex-col gap-2 ${
+                selected.has(skill.name)
+                  ? "border-blue-400 ring-1 ring-blue-200"
+                  : "border-gray-200"
+              }`}
             >
               <div className="flex items-start justify-between gap-2">
-                <div className="flex flex-col gap-0.5">
+                <div className="flex items-start gap-2">
+                  {skill.type === "doc" && (
+                    <input
+                      type="checkbox"
+                      checked={selected.has(skill.name)}
+                      onChange={() => toggleSelect(skill.name)}
+                      className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                  )}
+                  <div className="flex flex-col gap-0.5">
                   <span className="text-sm font-semibold text-gray-800 font-mono">
                     {skill.name}
                   </span>
@@ -676,6 +777,7 @@ export default function SkillsRegistry() {
                       )}
                     </span>
                   )}
+                  </div>
                 </div>
                 <span
                   className={`text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${badgeColor(

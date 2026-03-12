@@ -107,6 +107,16 @@ export async function deleteSkill(
   return res.data;
 }
 
+export async function deleteSkillsBatch(
+  names: string[]
+): Promise<{ deleted: string[]; skipped: { name: string; reason: string }[] }> {
+  const res = await axios.post<{
+    deleted: string[];
+    skipped: { name: string; reason: string }[];
+  }>(`${BASE_URL}/api/skills/delete-batch`, { names });
+  return res.data;
+}
+
 export async function sendChat(messages: Message[], model?: string): Promise<ChatResponse> {
   const res = await axios.post<ChatResponse>(`${BASE_URL}/api/chat`, {
     messages,
