@@ -302,28 +302,28 @@ def convert_pdf_to_md(
             chunk_md = md_file.read_text(encoding="utf-8")
             combined_md_content.append(chunk_md)
             
-            # Copy chunk images to master images dir
+            # Copy chunk images to master images dir and update references
             if images_dir and images_dir.is_dir():
                 has_images = True
                 for img in images_dir.iterdir():
                     if img.is_file():
-                        # We might have name collisions if MinerU numbers images
-                        # purely by sequence per file. We can prefix them with chunk num.
+                        # Prefix with chunk number to avoid name collisions
+                        # across chunks (MinerU often numbers images sequentially).
                         new_img_name = f"c{i}_{img.name}"
                         dest_img = master_images_dir / new_img_name
                         shutil.copy2(img, dest_img)
-                        
-                        # Update the markdown to reference the new image name
-                        # MinerU outputs image references usually as ![](images/something.jpg) or <img src="images/something.jpg">
-                        # We'll do a simple string replace for the image filename
-                        chunk_md = md_file.read_text(encoding="utf-8")
+
+                        # Update the in-memory markdown to reference the
+                        # renamed image.  We must NOT re-read md_file here
+                        # because that would discard renames from previous
+                        # iterations of this loop.
                         chunk_md = chunk_md.replace(
                             f"images/{img.name}", f"images/{new_img_name}"
                         ).replace(
                             f"images\\{img.name}", f"images/{new_img_name}"
                         )
-                
-                # Update chunk_md in the combined list
+
+                # Reflect all image renames in the combined list
                 combined_md_content[-1] = chunk_md
 
         except Exception as e:
@@ -408,9 +408,143 @@ def strip_image_links(md_content: str) -> str:
     """
     result = _MD_IMAGE_LINK_RE.sub("", md_content)
     result = _HTML_IMG_RE.sub("", result)
-    # Collapse runs of 3+ newlines into 2
     result = re.sub(r"\n{3,}", "\n\n", result)
     return result
+
+
+# ---------------------------------------------------------------------------
+# HTML table → Markdown table conversion
+# ---------------------------------------------------------------------------
+
+_HTML_TABLE_BLOCK_RE = re.compile(
+    r"<table[^>]*>.*?</table>", re.IGNORECASE | re.DOTALL
+)
+_HTML_ROW_RE = re.compile(r"<tr[^>]*>(.*?)</tr>", re.IGNORECASE | re.DOTALL)
+_HTML_CELL_RE = re.compile(
+    r"<(th|td)([^>]*)>(.*?)</\1>", re.IGNORECASE | re.DOTALL
+)
+_HTML_BR_RE = re.compile(r"<br\s*/?>", re.IGNORECASE)
+_HTML_TAG_RE = re.compile(r"<[^>]+>")
+_COLSPAN_RE = re.compile(r'colspan\s*=\s*["\']?(\d+)', re.IGNORECASE)
+
+
+def _parse_html_table(table_html: str) -> str:
+    """Convert a single ``<table>…</table>`` HTML block to a Markdown table."""
+    rows: list[list[str]] = []
+    first_row_is_header = False
+
+    for row_match in _HTML_ROW_RE.finditer(table_html):
+        row_html = row_match.group(1)
+        cells: list[str] = []
+        has_th = False
+        for cell_match in _HTML_CELL_RE.finditer(row_html):
+            tag = cell_match.group(1).lower()
+            attrs = cell_match.group(2)
+            raw_content = cell_match.group(3)
+
+            if tag == "th":
+                has_th = True
+
+            # Handle colspan: duplicate the cell content
+            colspan = 1
+            cs_match = _COLSPAN_RE.search(attrs)
+            if cs_match:
+                colspan = int(cs_match.group(1))
+
+            # Clean the cell text
+            text = _HTML_BR_RE.sub(" ", raw_content)   # <br> → space
+            text = _HTML_TAG_RE.sub("", text)           # strip remaining tags
+            text = " ".join(text.split())               # collapse whitespace
+            text = text.replace("|", "\\|")             # escape pipes
+
+            for _ in range(colspan):
+                cells.append(text)
+
+        if cells:
+            if not rows and has_th:
+                first_row_is_header = True
+            rows.append(cells)
+
+    if not rows:
+        return ""
+
+    # Normalise column count across all rows
+    max_cols = max(len(r) for r in rows)
+    for r in rows:
+        while len(r) < max_cols:
+            r.append("")
+
+    # Build the Markdown table
+    lines: list[str] = []
+
+    if first_row_is_header:
+        header = rows[0]
+        lines.append("| " + " | ".join(header) + " |")
+        lines.append("| " + " | ".join("---" for _ in header) + " |")
+        data_rows = rows[1:]
+    else:
+        # No explicit header – synthesise an empty one
+        lines.append("| " + " | ".join("" for _ in range(max_cols)) + " |")
+        lines.append("| " + " | ".join("---" for _ in range(max_cols)) + " |")
+        data_rows = rows
+
+    for row in data_rows:
+        lines.append("| " + " | ".join(row) + " |")
+
+    return "\n".join(lines)
+
+
+def html_tables_to_md(md_content: str) -> str:
+    """Replace every ``<table>…</table>`` block with a Markdown table.
+
+    Leaves non-table HTML untouched.
+    """
+    def _replace(match: re.Match) -> str:
+        md_table = _parse_html_table(match.group(0))
+        return md_table if md_table else match.group(0)
+
+    return _HTML_TABLE_BLOCK_RE.sub(_replace, md_content)
+
+
+# ---------------------------------------------------------------------------
+# Content page index (TOC) line removal
+# ---------------------------------------------------------------------------
+
+# Matches TOC-style lines such as:
+#   NIDCPOWER_ATTR_AUXILIARY_POWER_SOURCE_AVAILABLE . . . . . . . . . 22
+#   Some Section Title .................. 14
+#   niDCPower_ConfigureOutputEnabled  . . . . .  35
+# The pattern requires at least 3 consecutive ". " or "." sequences
+# followed by a page number near the end of the line.
+_TOC_LINE_RE = re.compile(
+    r"^.*(?:\.\s*){3,}\s*\d+\s*$", re.MULTILINE
+)
+
+
+def clean_toc_lines(md_content: str) -> str:
+    """Remove table-of-contents index lines from Markdown content.
+
+    These are lines like ``SOME_IDENTIFIER . . . . . . . . . 22`` that OCR
+    or PDF-to-MD tools preserve from the original document's content pages.
+    """
+    result = _TOC_LINE_RE.sub("", md_content)
+    # Collapse blank lines left behind
+    result = re.sub(r"\n{3,}", "\n\n", result)
+    return result
+
+
+def clean_api_md(raw_md: str) -> str:
+    """Apply all non-LLM cleaning steps suitable for an API Markdown doc.
+
+    Performs, in order:
+      1. Strip image links (API docs typically only have icons)
+      2. Convert HTML tables to Markdown tables
+      3. Remove TOC / content-page index lines
+    """
+    md = strip_image_links(raw_md)
+    md = html_tables_to_md(md)
+    md = clean_toc_lines(md)
+    return md
 
 
 # ---------------------------------------------------------------------------
@@ -548,23 +682,27 @@ async def cleanup_md_with_llm(
 # ---------------------------------------------------------------------------
 
 SPLIT_ANALYSIS_SYSTEM_PROMPT = """\
-You are an API documentation expert. You will receive a list of Markdown \
-headings extracted from a large API reference document.
+You are an API documentation expert. You will receive a sequential list of Markdown \
+headings extracted from a large, monolithic API reference document.
 
-Your task is to suggest how to split this monolithic document into smaller, \
-logically grouped files so that each file covers a coherent API topic.
+Your task is to suggest how to split this document into smaller, manageable files \
+strictly following its existing sequential order. Do NOT reorganize, reorder, or \
+attempt to gather related content from different parts of the document. You are \
+simply defining the logical "cut points" to slice the document from top to bottom.
 
-Return a JSON array where each element has:
-- "filename": a snake_case .md filename (e.g. "dcpower_c_api_functions_measure.md")
-- "title": a human-readable title for the section (used as H1 in the output)
-- "prefixes": an array of heading-text prefixes that belong in this file. \
-A heading belongs to a section if the heading text starts with any of these prefixes.
+Return a JSON array where each element represents a new file chunk in sequential order. \
+Each element must have:
+- "filename": a snake_case .md filename (e.g., "01_device_initialization.md", "02_ni_dcpower_measure.md").
+- "title": a human-readable title for the section (used as the H1 in the output).
+- "start_heading": The exact text of the heading where this chunk begins (excluding the `#` characters).
 
 Rules:
-- Group related headings together (e.g. all "Measure" headings, all "Source" headings).
-- The prefixes must match the *text after* the `#` in the heading, not the `#` itself.
-- Every heading should be covered by exactly one section.
-- Return ONLY the JSON array, no surrounding text or code fences.\
+- A chunk begins exactly at the "start_heading" and contains all content until the \
+"start_heading" of the next chunk in the list.
+- The first element in the JSON array MUST start with the very first heading provided.
+- Preserve the original linear flow. Do NOT group by topic if it breaks the original document order.
+- Choose "start_heading" points at major architectural shifts or logical breaks (e.g., transitioning from Configuration to Measurement functions).
+- Return ONLY the JSON array, no surrounding text, and no markdown code fences.\
 """
 
 
@@ -642,49 +780,75 @@ async def suggest_api_split(
 
 
 # ---------------------------------------------------------------------------
-# 5. Split API doc by heading prefixes
+# 5. Split API doc by sequential cut-points
 # ---------------------------------------------------------------------------
 
-_HEADING_RE = re.compile(r"^# (.+)")
+_HEADING_RE = re.compile(r"^(#{1,6})\s+(.+)")
 
 
 def split_api_doc(
     raw_md: str,
     split_definitions: list[dict[str, Any]],
 ) -> dict[str, str]:
-    """Split a monolithic API Markdown into multiple files.
+    """Split a monolithic API Markdown into multiple files by sequential cut-points.
 
-    split_definitions: list of {"filename": str, "title": str, "prefixes": [str]}
-    Returns {filename: content}.
+    *split_definitions* is a JSON-style list produced by the LLM paginator::
+
+        [
+          {"filename": "01_init.md", "title": "Init", "start_heading": "Initialize NI-DCPower"},
+          {"filename": "02_measure.md", "title": "Measure", "start_heading": "Measure Multiple Channels"},
+          ...
+        ]
+
+    The document is walked line-by-line.  When a heading whose text matches
+    a ``start_heading`` is encountered, all subsequent lines are routed to
+    that chunk until the next cut-point is hit.  Content that appears before
+    the very first cut-point is saved as ``00_introduction.md``.
+
+    Returns ``{filename: content}``.
     """
+    if not split_definitions:
+        return {}
+
+    # Map heading text → index for O(1) lookup
+    heading_to_idx: dict[str, int] = {}
+    for idx, sdef in enumerate(split_definitions):
+        heading_to_idx[sdef["start_heading"].strip()] = idx
+
     lines = raw_md.splitlines(keepends=True)
 
-    buckets: list[list[str]] = [[] for _ in split_definitions]
-    current_bucket: int | None = None
+    # Bucket 0 = intro (before first match); 1‥N map to split_definitions[0‥N-1]
+    buckets: list[list[str]] = [[] for _ in range(len(split_definitions) + 1)]
+    current_bucket = 0  # start in the intro bucket
 
     for line in lines:
         m = _HEADING_RE.match(line)
         if m:
-            heading_text = m.group(1).strip()
-            # Find matching section
-            for idx, sdef in enumerate(split_definitions):
-                prefixes = sdef.get("prefixes", [])
-                if any(heading_text.startswith(p) for p in prefixes):
-                    current_bucket = idx
-                    break
+            heading_text = m.group(2).strip()
+            if heading_text in heading_to_idx:
+                current_bucket = heading_to_idx[heading_text] + 1
 
-        if current_bucket is not None:
-            buckets[current_bucket].append(line)
+        buckets[current_bucket].append(line)
 
     result: dict[str, str] = {}
+
+    # Intro content (everything before the first cut-point)
+    intro = "".join(buckets[0]).strip()
+    if intro:
+        result["00_introduction.md"] = f"# Introduction\n\n{intro}\n"
+        logger.info("Intro content saved to 00_introduction.md")
+
+    # Named chunks
     for idx, sdef in enumerate(split_definitions):
-        if not buckets[idx]:
-            logger.warning("Split section '%s' matched no headings", sdef.get("title", "?"))
+        bucket = buckets[idx + 1]
+        if not bucket:
+            logger.warning(
+                "Split section '%s' matched no headings", sdef.get("title", "?")
+            )
             continue
         filename = sdef["filename"]
         title = sdef.get("title", filename)
-        content = f"# {title}\n\n" + "".join(buckets[idx])
-        result[filename] = content
+        result[filename] = f"# {title}\n\n{''.join(bucket)}"
 
     logger.info("Split produced %d non-empty files", len(result))
     return result

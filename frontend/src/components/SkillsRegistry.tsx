@@ -16,6 +16,7 @@ import {
   uploadDocSkill,
   deleteSkill,
   processPdfSkill,
+  processMdSkill,
   splitApiDoc,
   type Skill,
   type ProcessPdfEvent,
@@ -106,6 +107,9 @@ export default function SkillsRegistry() {
   const [deleting, setDeleting] = useState<string | null>(null);
 
   const isPdf = uploadFile?.name.toLowerCase().endsWith(".pdf") ?? false;
+  const isMd = uploadFile?.name.toLowerCase().endsWith(".md") ?? false;
+  const showCleanSplitOption = isMd && uploadSubtype === "programming_api";
+  const [wantsCleanSplit, setWantsCleanSplit] = useState(false);
 
   function fetchSkills() {
     setLoading(true);
@@ -154,6 +158,7 @@ export default function SkillsRegistry() {
     setProcessingMessage("");
     setTokenEstimate(null);
     setSplitPreview(null);
+    setWantsCleanSplit(false);
   }
 
   async function handleUpload() {
@@ -162,6 +167,12 @@ export default function SkillsRegistry() {
     // If it's a PDF, use the processing pipeline
     if (isPdf) {
       await handleProcessPdf();
+      return;
+    }
+
+    // MD clean+split flow for programming_api
+    if (showCleanSplitOption && wantsCleanSplit) {
+      await handleProcessMd();
       return;
     }
 
@@ -237,6 +248,74 @@ export default function SkillsRegistry() {
                 setUploadCategory("");
                 setUploadLanguage("");
                 setUploadFile(null);
+                if (fileRef.current) fileRef.current.value = "";
+                fetchSkills();
+              }, 1500);
+              break;
+            case "error":
+              setProcessingStep("error");
+              setUploadError(event.message || "Processing failed.");
+              setUploading(false);
+              break;
+          }
+        },
+      );
+    } catch (err) {
+      setProcessingStep("error");
+      setUploadError(
+        err instanceof Error ? err.message : "Processing failed."
+      );
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleProcessMd() {
+    if (!uploadFile || !uploadDevice.trim()) return;
+    setUploading(true);
+    setUploadError(null);
+    resetProcessingState();
+    setProcessingStep("cleaning");
+
+    try {
+      await processMdSkill(
+        uploadFile,
+        uploadDevice.trim(),
+        "programming_api",
+        uploadCategory.trim(),
+        uploadLanguage.trim() || undefined,
+        (event: ProcessPdfEvent) => {
+          switch (event.type) {
+            case "status":
+              setProcessingStep((event.step as ProcessingStep) || "cleaning");
+              setProcessingMessage(event.message || "");
+              break;
+            case "token_estimate":
+              setTokenEstimate({
+                chars: event.chars || 0,
+                tokens: event.estimated_tokens || 0,
+                images: event.images_copied || 0,
+              });
+              break;
+            case "split_preview":
+              setProcessingStep("split_preview");
+              setSplitPreview({
+                sourceSkill: event.source_skill || "",
+                splits: event.splits || [],
+              });
+              setUploading(false);
+              break;
+            case "done":
+              setProcessingStep("done");
+              setUploading(false);
+              setTimeout(() => {
+                setShowUploadForm(false);
+                resetProcessingState();
+                setUploadDevice("");
+                setUploadCategory("");
+                setUploadLanguage("");
+                setUploadFile(null);
+                setWantsCleanSplit(false);
                 if (fileRef.current) fileRef.current.value = "";
                 fetchSkills();
               }, 1500);
@@ -420,10 +499,21 @@ export default function SkillsRegistry() {
                   PDF detected — will be processed with MinerU + LLM cleanup
                 </p>
               )}
+              {showCleanSplitOption && (
+                <label className="flex items-center gap-2 mt-2 text-xs text-blue-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={wantsCleanSplit}
+                    onChange={(e) => setWantsCleanSplit(e.target.checked)}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  Clean &amp; Split API doc (convert HTML tables, remove TOC index lines, then split with LLM)
+                </label>
+              )}
             </div>
 
             {/* Token cost warning */}
-            {isPdf && tokenEstimate && processingStep !== "done" && (
+            {(isPdf || (showCleanSplitOption && wantsCleanSplit)) && tokenEstimate && processingStep !== "done" && (
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-2">
                 <AlertTriangle size={16} className="text-amber-500 flex-shrink-0 mt-0.5" />
                 <div className="text-xs text-amber-800">
@@ -537,9 +627,13 @@ export default function SkillsRegistry() {
                   ? uploading
                     ? "Processing…"
                     : "Process & Upload"
-                  : uploading
-                    ? "Uploading…"
-                    : "Upload"}
+                  : showCleanSplitOption && wantsCleanSplit
+                    ? uploading
+                      ? "Processing…"
+                      : "Clean & Split"
+                    : uploading
+                      ? "Uploading…"
+                      : "Upload"}
               </button>
             )}
           </div>

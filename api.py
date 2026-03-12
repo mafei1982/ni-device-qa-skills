@@ -378,6 +378,83 @@ async def process_pdf(
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 
 
+# ---------------------------------------------------------------------------
+# Markdown API Doc Processing (clean + split)
+# ---------------------------------------------------------------------------
+
+
+@app.post("/api/skills/process-md")
+async def process_md(
+    file: UploadFile = File(...),
+    device: str = Form(...),
+    subtype: str = Form(...),
+    category: str = Form(""),
+    language: str = Form(""),
+):
+    """Process an uploaded Markdown API doc: clean (HTML tables, TOC lines,
+    image links) then analyze headers with LLM and suggest splits.
+
+    Returns an SSE stream with progress events identical to process-pdf.
+    """
+    if subtype != "programming_api":
+        raise HTTPException(
+            status_code=400,
+            detail="MD clean+split is only supported for programming_api docs.",
+        )
+    if not file.filename or not file.filename.lower().endswith(".md"):
+        raise HTTPException(status_code=400, detail="File must be a Markdown (.md) file.")
+
+    device_slug = re.sub(r"[^a-z0-9]+", "_", device.lower()).strip("_")
+
+    async def event_stream():
+        try:
+            raw_md = (await file.read()).decode("utf-8")
+
+            # Step 1: Clean the markdown
+            yield _sse({"type": "status", "step": "cleaning", "message": "Cleaning API doc (HTML tables, TOC lines, image links)..."})
+            cleaned_md = doc_processor.clean_api_md(raw_md)
+
+            est_tokens = doc_processor.estimate_tokens(cleaned_md)
+            yield _sse({
+                "type": "token_estimate",
+                "chars": len(cleaned_md),
+                "estimated_tokens": est_tokens,
+                "images_copied": 0,
+            })
+
+            # Step 2: Save cleaned doc
+            yield _sse({"type": "status", "step": "saving_raw", "message": "Saving cleaned API doc..."})
+            skill_name = f"{device_slug}_programming_api"
+            doc_path = SKILLS_DIR / "docs" / f"{skill_name}.md"
+            doc_path.write_text(cleaned_md, encoding="utf-8")
+
+            # Step 3: Analyze headers for split suggestions
+            yield _sse({"type": "status", "step": "analyzing", "message": f"Analyzing API doc structure with {DOC_PROCESS_MODEL}..."})
+            try:
+                splits = await doc_processor.suggest_api_split(
+                    cleaned_md,
+                    DOC_PROCESS_API_URL,
+                    DOC_PROCESS_API_KEY,
+                    DOC_PROCESS_MODEL,
+                    device_slug=device_slug,
+                )
+            except Exception as e:
+                yield _sse({"type": "error", "message": f"Split analysis failed: {e}"})
+                return
+
+            yield _sse({
+                "type": "split_preview",
+                "source_skill": skill_name,
+                "splits": splits,
+            })
+
+        except Exception as e:
+            logger.exception("Unexpected error during MD processing")
+            yield _sse({"type": "error", "message": f"Unexpected error: {e}"})
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+
 class SplitApiRequest(BaseModel):
     source_skill: str
     splits: list[dict]

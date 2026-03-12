@@ -243,6 +243,65 @@ export async function processPdfSkill(
 }
 
 /**
+ * Process an MD API doc upload: clean (HTML tables, TOC, images) + split analysis.
+ * Returns progress events via SSE (same shape as processPdfSkill).
+ */
+export async function processMdSkill(
+  file: File,
+  device: string,
+  subtype: "programming_api",
+  category: string,
+  language: string | undefined,
+  onEvent: (event: ProcessPdfEvent) => void,
+  signal?: AbortSignal,
+): Promise<void> {
+  const form = new FormData();
+  form.append("file", file);
+  form.append("device", device);
+  form.append("subtype", subtype);
+  form.append("category", category);
+  if (language) form.append("language", language);
+
+  const res = await fetch(`${BASE_URL}/api/skills/process-md`, {
+    method: "POST",
+    body: form,
+    signal,
+  });
+
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+  }
+
+  const reader = res.body!.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const parts = buffer.split("\n\n");
+      buffer = parts.pop() || "";
+
+      for (const part of parts) {
+        const trimmed = part.trim();
+        if (!trimmed || !trimmed.startsWith("data: ")) continue;
+        try {
+          const data: ProcessPdfEvent = JSON.parse(trimmed.substring(6));
+          onEvent(data);
+        } catch {
+          // skip malformed
+        }
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+}
+
+/**
  * Execute a confirmed API doc split.
  */
 export async function splitApiDoc(
