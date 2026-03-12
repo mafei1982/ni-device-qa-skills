@@ -462,8 +462,8 @@ This output will be used to build a Retrieval-Augmented Generation (RAG) knowled
 Apply the following STRICT RULES to your output:
 
 1. ELIMINATE MATHEMATICAL/LATEX BLOAT
-Never use LaTeX, MathJax, or heavy symbol wrappers (e.g., `$`, `\mathrm`, `\mathsf`) for basic units, numbers, or simple variables. 
-- BAD: `$6 0 0 \mathrm { k } \mathsf { S } / \mathsf { s }$` or `$1 0 0 \mathsf { k } \Omega$`
+Never use LaTeX, MathJax, or heavy symbol wrappers (e.g., `$`, `\\mathrm`,  `\\mathsf`) for basic units, numbers, or simple variables. 
+- BAD: `$6 0 0 \\mathrm { k } \\mathsf { S } / \\mathsf { s }$` or `$1 0 0 \\mathsf { k } \\Omega$`
 - GOOD: `600 kS/s` or `100 kΩ`
 Only use LaTeX for complex, multi-line equations that cannot be represented in plain text.
 
