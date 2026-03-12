@@ -923,3 +923,136 @@ def register_skill(entry: dict) -> None:
 def estimate_tokens(text: str) -> int:
     """Rough token estimate (1 token ≈ 4 chars for English text)."""
     return len(text) // 4
+
+
+# ---------------------------------------------------------------------------
+# 7. LLM-based API doc split (full-content approach)
+# ---------------------------------------------------------------------------
+
+LLM_SPLIT_SYSTEM_PROMPT = """\
+You are an API documentation expert. You will receive a large, monolithic API \
+reference document in Markdown.
+
+Your task is to analyze the full document and suggest how to split it into \
+smaller, manageable files by defining sequential cut-points — exactly the same \
+way you would if you only saw the headings, but with the advantage of reading \
+the full content to make better grouping decisions.
+
+Return a JSON array where each element represents a new file chunk in sequential \
+order. Each element must have:
+- "filename": a snake_case .md filename using the format ``{filename_prefix}_<section>.md`` \
+(e.g., "{filename_prefix}_functions_measure.md", "{filename_prefix}_attributes_source.md").
+- "title": a human-readable title for the section (used as the H1 in the output).
+- "start_heading": The exact text of the heading where this chunk begins \
+(excluding the `#` characters).
+- "description": A brief one-sentence description of what this section covers \
+(used as metadata for skill search).
+
+Rules:
+- A chunk begins exactly at the "start_heading" and contains all content until \
+the "start_heading" of the next chunk in the list.
+- The first element in the JSON array MUST start with the very first heading provided.
+- Preserve the original linear flow. Do NOT group by topic if it breaks the \
+original document order.
+- Choose "start_heading" points at major architectural shifts or logical breaks \
+(e.g., transitioning from Configuration to Measurement functions).
+- Split at logical boundaries: group related functions, attributes, or topics together.
+- Keep each file focused on a single coherent topic area.
+- Return ONLY the JSON array — no surrounding text, no markdown code fences.\
+"""
+
+
+async def llm_split_api_doc(
+    raw_md: str,
+    api_url: str,
+    api_key: str,
+    model: str,
+    device_slug: str = "",
+    category: str = "",
+    language: str = "",
+) -> list[dict[str, Any]]:
+    """Send the full API doc to an LLM for split analysis.
+
+    Unlike ``suggest_api_split`` which only sends headers, this sends the
+    entire document content so the LLM can make better grouping decisions.
+    The output format is the same as ``suggest_api_split`` (filename, title,
+    start_heading) plus a ``description`` field for each section.
+
+    The actual splitting is still performed by ``split_api_doc()`` using
+    the returned cut-points.
+
+    WARNING: This consumes a large number of input tokens since the full
+    document is sent.
+    """
+    cat_slug = re.sub(r"[^a-z0-9]+", "_", category.lower()).strip("_") if category.strip() else ""
+    lang_slug = re.sub(r"[^a-z0-9]+", "_", language.lower()).strip("_") if language.strip() else ""
+    if cat_slug and lang_slug:
+        filename_prefix = f"{cat_slug}_{lang_slug}"
+    elif cat_slug:
+        filename_prefix = cat_slug
+    elif lang_slug:
+        filename_prefix = lang_slug
+    else:
+        filename_prefix = device_slug or "api"
+
+    system_prompt = LLM_SPLIT_SYSTEM_PROMPT.replace(
+        "{filename_prefix}", filename_prefix
+    )
+
+    client = AsyncOpenAI(base_url=api_url, api_key=api_key)
+
+    input_tokens = estimate_tokens(raw_md)
+    logger.info(
+        "Sending full API doc (%d chars, ~%d tokens) to %s for LLM split (model=%s)",
+        len(raw_md),
+        input_tokens,
+        api_url,
+        model,
+    )
+
+    response = await client.chat.completions.create(
+        model=model,
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {
+                "role": "user",
+                "content": (
+                    f"Device/API identifier: {device_slug}\n\n"
+                    "Analyze the following API documentation and suggest how to "
+                    "split it into logical files by defining cut-points.\n\n"
+                    f"{raw_md}"
+                ),
+            },
+        ],
+        temperature=0.1,
+    )
+
+    content = response.choices[0].message.content or "[]"
+
+    # Strip potential code fences
+    content = content.strip()
+    if content.startswith("```"):
+        content = re.sub(r"^```\w*\n?", "", content)
+        content = re.sub(r"\n?```$", "", content)
+    content = content.strip()
+
+    try:
+        splits = json.loads(content)
+    except json.JSONDecodeError as e:
+        raise ValueError(
+            f"LLM returned invalid JSON for split output: {e}\n"
+            f"Raw response (first 500 chars):\n{content[:500]}"
+        )
+
+    if not isinstance(splits, list):
+        raise ValueError("LLM split output must be a JSON array.")
+
+    # Normalize filenames
+    for sdef in splits:
+        fn = sdef.get("filename", "")
+        if fn and not fn.startswith(filename_prefix + "_"):
+            section = re.sub(r"^\d+_", "", fn.removesuffix(".md"))
+            sdef["filename"] = f"{filename_prefix}_{section}.md"
+
+    logger.info("LLM split produced %d files", len(splits))
+    return splits

@@ -53,6 +53,7 @@ type ProcessingStep =
   | "saving"
   | "saving_raw"
   | "analyzing"
+  | "llm_splitting"
   | "split_preview"
   | "splitting"
   | "done"
@@ -65,6 +66,7 @@ const STEP_LABELS: Record<string, string> = {
   saving: "Saving and registering…",
   saving_raw: "Saving converted API doc…",
   analyzing: "Analyzing API doc structure…",
+  llm_splitting: "Splitting API doc with LLM (high token usage)…",
   splitting: "Splitting API doc…",
   done: "Done!",
 };
@@ -143,7 +145,9 @@ export default function SkillsRegistry() {
   const isPdf = uploadFile?.name.toLowerCase().endsWith(".pdf") ?? false;
   const isMd = uploadFile?.name.toLowerCase().endsWith(".md") ?? false;
   const showCleanSplitOption = isMd && uploadSubtype === "programming_api";
+  const showLlmSplitOption = uploadSubtype === "programming_api" && (isPdf || (isMd && wantsCleanSplit));
   const [wantsCleanSplit, setWantsCleanSplit] = useState(false);
+  const [wantsLlmSplit, setWantsLlmSplit] = useState(false);
 
   function fetchSkills() {
     setLoading(true);
@@ -241,6 +245,7 @@ export default function SkillsRegistry() {
     setTokenEstimate(null);
     setSplitPreview(null);
     setWantsCleanSplit(false);
+    setWantsLlmSplit(false);
   }
 
   async function handleUpload() {
@@ -341,6 +346,8 @@ export default function SkillsRegistry() {
               break;
           }
         },
+        undefined,
+        wantsLlmSplit,
       );
     } catch (err) {
       setProcessingStep("error");
@@ -409,6 +416,8 @@ export default function SkillsRegistry() {
               break;
           }
         },
+        undefined,
+        wantsLlmSplit,
       );
     } catch (err) {
       setProcessingStep("error");
@@ -618,6 +627,25 @@ export default function SkillsRegistry() {
                   Clean &amp; Split API doc (convert HTML tables, remove TOC index lines, then split with LLM)
                 </label>
               )}
+              {showLlmSplitOption && (
+                <label className="flex items-center gap-2 mt-2 text-xs text-amber-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={wantsLlmSplit}
+                    onChange={(e) => setWantsLlmSplit(e.target.checked)}
+                    className="rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+                  />
+                  Use LLM to split (sends full doc to LLM for intelligent splitting)
+                </label>
+              )}
+              {wantsLlmSplit && showLlmSplitOption && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-2.5 flex items-start gap-2 mt-1">
+                  <AlertTriangle size={14} className="text-amber-500 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-700">
+                    <strong>High token cost warning:</strong> The entire document will be sent to the LLM and the full split content will be generated in the response. This can consume a very large number of tokens (input + output). Only use this for documents where the header-based split produces poor results.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Token cost warning */}
@@ -688,6 +716,11 @@ export default function SkillsRegistry() {
                       <div className="text-gray-400 mt-0.5">
                         Starts at: {split.start_heading}
                       </div>
+                      {split.description && (
+                        <div className="text-gray-500 mt-0.5 italic">
+                          {split.description}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

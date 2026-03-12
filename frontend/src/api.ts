@@ -44,6 +44,7 @@ export interface SplitDefinition {
   filename: string;
   title: string;
   start_heading: string;
+  description?: string;
 }
 
 export interface ProcessPdfEvent {
@@ -227,6 +228,7 @@ export async function processPdfSkill(
   language: string | undefined,
   onEvent: (event: ProcessPdfEvent) => void,
   signal?: AbortSignal,
+  llmSplit?: boolean,
 ): Promise<void> {
   const form = new FormData();
   form.append("file", file);
@@ -234,6 +236,7 @@ export async function processPdfSkill(
   form.append("subtype", subtype);
   form.append("category", category);
   if (language) form.append("language", language);
+  if (llmSplit) form.append("llm_split", "true");
 
   const res = await fetch(`${BASE_URL}/api/skills/process-pdf`, {
     method: "POST",
@@ -286,6 +289,7 @@ export async function processMdSkill(
   language: string | undefined,
   onEvent: (event: ProcessPdfEvent) => void,
   signal?: AbortSignal,
+  llmSplit?: boolean,
 ): Promise<void> {
   const form = new FormData();
   form.append("file", file);
@@ -293,6 +297,7 @@ export async function processMdSkill(
   form.append("subtype", subtype);
   form.append("category", category);
   if (language) form.append("language", language);
+  if (llmSplit) form.append("llm_split", "true");
 
   const res = await fetch(`${BASE_URL}/api/skills/process-md`, {
     method: "POST",

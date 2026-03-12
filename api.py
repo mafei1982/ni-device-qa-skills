@@ -344,6 +344,7 @@ async def process_pdf(
     subtype: str = Form(...),
     category: str = Form(""),
     language: str = Form(""),
+    llm_split: str = Form("false"),
 ):
     """Process a PDF upload: convert with MinerU, clean with LLM, register.
 
@@ -433,6 +434,8 @@ async def process_pdf(
             elif subtype == "programming_api":
                 # For API docs: skip image copy (images are just icons),
                 # strip all image links, save, then suggest splits.
+                use_llm_split = llm_split.lower() in ("true", "1", "yes")
+
                 yield _sse({"type": "status", "step": "cleaning_images", "message": "Stripping icon image links from API doc..."})
                 raw_md = doc_processor.strip_image_links(raw_md)
 
@@ -450,27 +453,50 @@ async def process_pdf(
                 doc_path = SKILLS_DIR / "docs" / f"{skill_name}.md"
                 doc_path.write_text(raw_md, encoding="utf-8")
 
-                # Analyze headers for split
-                yield _sse({"type": "status", "step": "analyzing", "message": f"Analyzing API doc structure with {DOC_PROCESS_MODEL}..."})
-                try:
-                    splits = await doc_processor.suggest_api_split(
-                        raw_md,
-                        DOC_PROCESS_API_URL,
-                        DOC_PROCESS_API_KEY,
-                        DOC_PROCESS_MODEL,
-                        device_slug=device_slug,
-                        category=category,
-                        language=language,
-                    )
-                except Exception as e:
-                    yield _sse({"type": "error", "message": f"Split analysis failed: {e}"})
-                    return
+                if use_llm_split:
+                    # LLM-based split: send full doc to LLM for better grouping decisions
+                    yield _sse({"type": "status", "step": "llm_splitting", "message": f"Analyzing API doc with LLM ({DOC_PROCESS_MODEL})... This may take a while and will consume many tokens."})
+                    try:
+                        llm_splits = await doc_processor.llm_split_api_doc(
+                            raw_md,
+                            DOC_PROCESS_API_URL,
+                            DOC_PROCESS_API_KEY,
+                            DOC_PROCESS_MODEL,
+                            device_slug=device_slug,
+                            category=category,
+                            language=language,
+                        )
+                    except Exception as e:
+                        yield _sse({"type": "error", "message": f"LLM split failed: {e}"})
+                        return
 
-                yield _sse({
-                    "type": "split_preview",
-                    "source_skill": skill_name,
-                    "splits": splits,
-                })
+                    yield _sse({
+                        "type": "split_preview",
+                        "source_skill": skill_name,
+                        "splits": llm_splits,
+                    })
+                else:
+                    # Header-only analysis: send only headers to LLM
+                    yield _sse({"type": "status", "step": "analyzing", "message": f"Analyzing API doc structure with {DOC_PROCESS_MODEL}..."})
+                    try:
+                        splits = await doc_processor.suggest_api_split(
+                            raw_md,
+                            DOC_PROCESS_API_URL,
+                            DOC_PROCESS_API_KEY,
+                            DOC_PROCESS_MODEL,
+                            device_slug=device_slug,
+                            category=category,
+                            language=language,
+                        )
+                    except Exception as e:
+                        yield _sse({"type": "error", "message": f"Split analysis failed: {e}"})
+                        return
+
+                    yield _sse({
+                        "type": "split_preview",
+                        "source_skill": skill_name,
+                        "splits": splits,
+                    })
 
         except Exception as e:
             logger.exception("Unexpected error during PDF processing")
@@ -491,6 +517,7 @@ async def process_md(
     subtype: str = Form(...),
     category: str = Form(""),
     language: str = Form(""),
+    llm_split: str = Form("false"),
 ):
     """Process an uploaded Markdown API doc: clean (HTML tables, TOC lines,
     image links) then analyze headers with LLM and suggest splits.
@@ -510,6 +537,7 @@ async def process_md(
     async def event_stream():
         try:
             raw_md = (await file.read()).decode("utf-8")
+            use_llm_split = llm_split.lower() in ("true", "1", "yes")
 
             # Step 1: Clean the markdown
             yield _sse({"type": "status", "step": "cleaning", "message": "Cleaning API doc (HTML tables, TOC lines, image links)..."})
@@ -529,27 +557,50 @@ async def process_md(
             doc_path = SKILLS_DIR / "docs" / f"{skill_name}.md"
             doc_path.write_text(cleaned_md, encoding="utf-8")
 
-            # Step 3: Analyze headers for split suggestions
-            yield _sse({"type": "status", "step": "analyzing", "message": f"Analyzing API doc structure with {DOC_PROCESS_MODEL}..."})
-            try:
-                splits = await doc_processor.suggest_api_split(
-                    cleaned_md,
-                    DOC_PROCESS_API_URL,
-                    DOC_PROCESS_API_KEY,
-                    DOC_PROCESS_MODEL,
-                    device_slug=device_slug,
-                    category=category,
-                    language=language,
-                )
-            except Exception as e:
-                yield _sse({"type": "error", "message": f"Split analysis failed: {e}"})
-                return
+            if use_llm_split:
+                # LLM-based split: send full doc to LLM for better grouping decisions
+                yield _sse({"type": "status", "step": "llm_splitting", "message": f"Analyzing API doc with LLM ({DOC_PROCESS_MODEL})... This may take a while and will consume many tokens."})
+                try:
+                    llm_splits = await doc_processor.llm_split_api_doc(
+                        cleaned_md,
+                        DOC_PROCESS_API_URL,
+                        DOC_PROCESS_API_KEY,
+                        DOC_PROCESS_MODEL,
+                        device_slug=device_slug,
+                        category=category,
+                        language=language,
+                    )
+                except Exception as e:
+                    yield _sse({"type": "error", "message": f"LLM split failed: {e}"})
+                    return
 
-            yield _sse({
-                "type": "split_preview",
-                "source_skill": skill_name,
-                "splits": splits,
-            })
+                yield _sse({
+                    "type": "split_preview",
+                    "source_skill": skill_name,
+                    "splits": llm_splits,
+                })
+            else:
+                # Step 3: Analyze headers for split suggestions
+                yield _sse({"type": "status", "step": "analyzing", "message": f"Analyzing API doc structure with {DOC_PROCESS_MODEL}..."})
+                try:
+                    splits = await doc_processor.suggest_api_split(
+                        cleaned_md,
+                        DOC_PROCESS_API_URL,
+                        DOC_PROCESS_API_KEY,
+                        DOC_PROCESS_MODEL,
+                        device_slug=device_slug,
+                        category=category,
+                        language=language,
+                    )
+                except Exception as e:
+                    yield _sse({"type": "error", "message": f"Split analysis failed: {e}"})
+                    return
+
+                yield _sse({
+                    "type": "split_preview",
+                    "source_skill": skill_name,
+                    "splits": splits,
+                })
 
         except Exception as e:
             logger.exception("Unexpected error during MD processing")
@@ -594,13 +645,17 @@ async def split_api(req: SplitApiRequest):
             (s.get("title", "") for s in req.splits if s["filename"] == filename),
             filename,
         )
+        description = next(
+            (s.get("description", "") for s in req.splits if s["filename"] == filename),
+            "",
+        )
 
         entry: dict[str, str] = {
             "name": skill_name,
             "type": "doc",
             "subtype": "programming_api",
             "device": device_slug,
-            "description": title,
+            "description": description or title,
         }
         if req.language.strip():
             entry["language"] = req.language.strip()
