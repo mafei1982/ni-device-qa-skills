@@ -43,7 +43,7 @@ export interface Skill {
 export interface SplitDefinition {
   filename: string;
   title: string;
-  prefixes: string[];
+  start_heading: string;
 }
 
 export interface ProcessPdfEvent {

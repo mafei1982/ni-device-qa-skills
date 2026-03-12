@@ -578,7 +578,7 @@ export default function SkillsRegistry() {
                       <span className="font-mono text-blue-700">{split.filename}</span>
                       <span className="text-gray-500 ml-2">— {split.title}</span>
                       <div className="text-gray-400 mt-0.5">
-                        Prefixes: {split.prefixes.join(", ")}
+                        Starts at: {split.start_heading}
                       </div>
                     </div>
                   ))}
