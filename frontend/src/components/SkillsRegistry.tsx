@@ -843,7 +843,7 @@ export default function SkillsRegistry() {
               }`}
             >
               <div className="flex items-start justify-between gap-2">
-                <div className="flex items-start gap-2">
+                <div className="flex items-start gap-2 min-w-0 flex-1">
                   {skill.type === "doc" && (
                     <input
                       type="checkbox"
@@ -852,21 +852,21 @@ export default function SkillsRegistry() {
                       className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
                   )}
-                  <div className="flex flex-col gap-0.5">
-                  <span className="text-sm font-semibold text-gray-800 font-mono">
-                    {skill.name}
-                  </span>
-                  {skill.device && (
-                    <span className="text-xs text-gray-500">
-                      {skill.device}
-                      {skill.category && skill.category !== skill.device && (
-                        <span className="text-gray-400"> · {skill.category}</span>
-                      )}
-                      {skill.language && (
-                        <span className="text-gray-400"> · {skill.language}</span>
-                      )}
+                  <div className="flex flex-col gap-0.5 min-w-0">
+                    <span className="text-sm font-semibold text-gray-800 font-mono break-all">
+                      {skill.name}
                     </span>
-                  )}
+                    {skill.device && (
+                      <span className="text-xs text-gray-500">
+                        {skill.device}
+                        {skill.category && skill.category !== skill.device && (
+                          <span className="text-gray-400"> · {skill.category}</span>
+                        )}
+                        {skill.language && (
+                          <span className="text-gray-400"> · {skill.language}</span>
+                        )}
+                      </span>
+                    )}
                   </div>
                 </div>
                 <span
