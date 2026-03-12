@@ -14,6 +14,7 @@ import {
   getSkills,
   getSkillContent,
   updateSkillContent,
+  updateSkillDescription,
   uploadDocSkill,
   deleteSkill,
   deleteSkillsBatch,
@@ -82,6 +83,7 @@ export default function SkillsRegistry() {
   // Edit mode state
   const [editing, setEditing] = useState(false);
   const [editContent, setEditContent] = useState("");
+  const [editDescription, setEditDescription] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -190,6 +192,7 @@ export default function SkillsRegistry() {
 
   function handleStartEdit() {
     setEditContent(modalContent);
+    setEditDescription(modalSkill?.description ?? "");
     setEditing(true);
     setSaveError(null);
   }
@@ -197,6 +200,7 @@ export default function SkillsRegistry() {
   function handleCancelEdit() {
     setEditing(false);
     setEditContent("");
+    setEditDescription("");
     setSaveError(null);
   }
 
@@ -205,10 +209,23 @@ export default function SkillsRegistry() {
     setSaving(true);
     setSaveError(null);
     try {
-      await updateSkillContent(modalSkill.name, editContent);
-      setModalContent(editContent);
+      const descChanged = editDescription !== modalSkill.description;
+      const contentChanged = editContent !== modalContent;
+
+      if (contentChanged) {
+        await updateSkillContent(modalSkill.name, editContent);
+        setModalContent(editContent);
+      }
+      if (descChanged) {
+        const updated = await updateSkillDescription(modalSkill.name, editDescription);
+        setModalSkill(updated);
+        setSkills((prev) =>
+          prev.map((s) => (s.name === updated.name ? updated : s))
+        );
+      }
       setEditing(false);
       setEditContent("");
+      setEditDescription("");
     } catch (err) {
       setSaveError(
         err instanceof Error ? err.message : "Failed to save changes."
@@ -896,25 +913,36 @@ export default function SkillsRegistry() {
                     </button>
                   </>
                 ) : (
-                  modalSkill.type === "doc" && (
-                    <button
-                      onClick={handleStartEdit}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 transition-colors"
-                    >
-                      <FileText size={13} />
-                      Edit
-                    </button>
-                  )
+                  <button
+                    onClick={handleStartEdit}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 transition-colors"
+                  >
+                    <FileText size={13} />
+                    Edit
+                  </button>
                 )}
               </div>
               {saveError && (
                 <div className="text-xs text-red-600 mb-2">{saveError}</div>
               )}
+              {editing && (
+                <div className="mb-3">
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Description
+                  </label>
+                  <textarea
+                    value={editDescription}
+                    onChange={(e) => setEditDescription(e.target.value)}
+                    rows={3}
+                    className="w-full text-sm text-gray-800 bg-gray-50 rounded-lg p-3 border border-gray-200 outline-none focus:border-blue-500 resize-none transition-colors"
+                  />
+                </div>
+              )}
               {editing ? (
                 <textarea
                   value={editContent}
                   onChange={(e) => setEditContent(e.target.value)}
-                  className="w-full h-[60vh] font-mono text-xs text-gray-800 leading-relaxed bg-gray-50 rounded-lg p-4 border border-gray-200 outline-none focus:border-blue-500 resize-none transition-colors"
+                  className="w-full h-[55vh] font-mono text-xs text-gray-800 leading-relaxed bg-gray-50 rounded-lg p-4 border border-gray-200 outline-none focus:border-blue-500 resize-none transition-colors"
                 />
               ) : (
                 <pre className="whitespace-pre-wrap break-words font-mono text-xs text-gray-800 leading-relaxed bg-gray-50 rounded-lg p-4 border border-gray-200">

@@ -195,9 +195,33 @@ class UpdateSkillRequest(BaseModel):
     content: str
 
 
+class UpdateSkillMetaRequest(BaseModel):
+    description: str
+
+
+@app.patch("/api/skills/{skill_name}")
+async def update_skill_meta(skill_name: str, req: UpdateSkillMetaRequest):
+    """Update the metadata (description) of an existing skill."""
+    with open(METADATA_PATH, encoding="utf-8") as f:
+        registry = json.load(f)
+    skill_entry = next(
+        (s for s in registry.get("skills", []) if s["name"] == skill_name), None
+    )
+    if skill_entry is None:
+        raise HTTPException(status_code=404, detail=f"Skill '{skill_name}' not found.")
+
+    skill_entry["description"] = req.description
+
+    with open(METADATA_PATH, "w", encoding="utf-8") as f:
+        json.dump(registry, f, ensure_ascii=False, indent=2)
+        f.write("\n")
+
+    return skill_entry
+
+
 @app.put("/api/skills/{skill_name}/content")
 async def update_skill_content(skill_name: str, req: UpdateSkillRequest):
-    """Update the markdown content of an existing doc skill."""
+    """Update the markdown content of an existing skill."""
     with open(METADATA_PATH, encoding="utf-8") as f:
         registry = json.load(f)
     skill_entry = next(

@@ -109,6 +109,17 @@ export async function updateSkillContent(
   return res.data;
 }
 
+export async function updateSkillDescription(
+  skillName: string,
+  description: string
+): Promise<Skill> {
+  const res = await axios.patch<Skill>(
+    `${BASE_URL}/api/skills/${encodeURIComponent(skillName)}`,
+    { description }
+  );
+  return res.data;
+}
+
 export async function deleteSkill(
   skillName: string
 ): Promise<{ deleted: string }> {
