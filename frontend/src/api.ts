@@ -98,6 +98,17 @@ export async function uploadDocSkill(
   return res.data;
 }
 
+export async function updateSkillContent(
+  skillName: string,
+  content: string
+): Promise<{ name: string; updated: boolean }> {
+  const res = await axios.put<{ name: string; updated: boolean }>(
+    `${BASE_URL}/api/skills/${encodeURIComponent(skillName)}/content`,
+    { content }
+  );
+  return res.data;
+}
+
 export async function deleteSkill(
   skillName: string
 ): Promise<{ deleted: string }> {

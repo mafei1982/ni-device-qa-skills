@@ -191,6 +191,34 @@ async def upload_doc_skill(
     return new_entry
 
 
+class UpdateSkillRequest(BaseModel):
+    content: str
+
+
+@app.put("/api/skills/{skill_name}/content")
+async def update_skill_content(skill_name: str, req: UpdateSkillRequest):
+    """Update the markdown content of an existing doc skill."""
+    with open(METADATA_PATH, encoding="utf-8") as f:
+        registry = json.load(f)
+    skill_entry = next(
+        (s for s in registry.get("skills", []) if s["name"] == skill_name), None
+    )
+    if skill_entry is None:
+        raise HTTPException(status_code=404, detail=f"Skill '{skill_name}' not found.")
+
+    skill_type = skill_entry["type"]
+    if skill_type == "doc":
+        skill_path = SKILLS_DIR / "docs" / f"{skill_name}.md"
+    else:
+        skill_path = SKILLS_DIR / skill_type / f"{skill_name}.md"
+
+    if not skill_path.exists():
+        raise HTTPException(status_code=404, detail="Skill file not found.")
+
+    skill_path.write_text(req.content, encoding="utf-8")
+    return {"name": skill_name, "updated": True}
+
+
 @app.delete("/api/skills/{skill_name}")
 async def delete_skill(skill_name: str):
     """Delete a doc skill from the registry and filesystem."""

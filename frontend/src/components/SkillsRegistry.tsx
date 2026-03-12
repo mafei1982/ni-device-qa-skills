@@ -13,6 +13,7 @@ import {
 import {
   getSkills,
   getSkillContent,
+  updateSkillContent,
   uploadDocSkill,
   deleteSkill,
   deleteSkillsBatch,
@@ -77,6 +78,12 @@ export default function SkillsRegistry() {
   const [modalContent, setModalContent] = useState("");
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
+
+  // Edit mode state
+  const [editing, setEditing] = useState(false);
+  const [editContent, setEditContent] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Upload form state
   const [showUploadForm, setShowUploadForm] = useState(false);
@@ -176,6 +183,39 @@ export default function SkillsRegistry() {
     setModalSkill(null);
     setModalContent("");
     setModalError(null);
+    setEditing(false);
+    setEditContent("");
+    setSaveError(null);
+  }
+
+  function handleStartEdit() {
+    setEditContent(modalContent);
+    setEditing(true);
+    setSaveError(null);
+  }
+
+  function handleCancelEdit() {
+    setEditing(false);
+    setEditContent("");
+    setSaveError(null);
+  }
+
+  async function handleSaveEdit() {
+    if (!modalSkill) return;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await updateSkillContent(modalSkill.name, editContent);
+      setModalContent(editContent);
+      setEditing(false);
+      setEditContent("");
+    } catch (err) {
+      setSaveError(
+        err instanceof Error ? err.message : "Failed to save changes."
+      );
+    } finally {
+      setSaving(false);
+    }
   }
 
   function resetProcessingState() {
@@ -830,9 +870,58 @@ export default function SkillsRegistry() {
             <div className="text-sm text-red-600">{modalError}</div>
           )}
           {!modalLoading && !modalError && (
-            <pre className="whitespace-pre-wrap break-words font-mono text-xs text-gray-800 leading-relaxed bg-gray-50 rounded-lg p-4 border border-gray-200">
-              {modalContent}
-            </pre>
+            <>
+              <div className="flex items-center justify-end gap-2 mb-3">
+                {editing ? (
+                  <>
+                    <button
+                      onClick={handleCancelEdit}
+                      disabled={saving}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-300 text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                    >
+                      <X size={13} />
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleSaveEdit}
+                      disabled={saving}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {saving ? (
+                        <Loader2 size={13} className="animate-spin" />
+                      ) : (
+                        <Check size={13} />
+                      )}
+                      Save
+                    </button>
+                  </>
+                ) : (
+                  modalSkill.type === "doc" && (
+                    <button
+                      onClick={handleStartEdit}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 transition-colors"
+                    >
+                      <FileText size={13} />
+                      Edit
+                    </button>
+                  )
+                )}
+              </div>
+              {saveError && (
+                <div className="text-xs text-red-600 mb-2">{saveError}</div>
+              )}
+              {editing ? (
+                <textarea
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                  className="w-full h-[60vh] font-mono text-xs text-gray-800 leading-relaxed bg-gray-50 rounded-lg p-4 border border-gray-200 outline-none focus:border-blue-500 resize-none transition-colors"
+                />
+              ) : (
+                <pre className="whitespace-pre-wrap break-words font-mono text-xs text-gray-800 leading-relaxed bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  {modalContent}
+                </pre>
+              )}
+            </>
           )}
         </Modal>
       )}
