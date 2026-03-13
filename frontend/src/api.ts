@@ -51,6 +51,7 @@ export interface ProcessPdfEvent {
   type: "status" | "token_estimate" | "split_preview" | "done" | "error";
   step?: string;
   message?: string;
+  percent?: number;
   chars?: number;
   estimated_tokens?: number;
   images_copied?: number;

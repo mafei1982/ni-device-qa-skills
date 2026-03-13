@@ -556,6 +556,21 @@ def clean_api_md(raw_md: str) -> str:
     return md
 
 
+def clean_manual_md(raw_md: str) -> str:
+    """Apply all non-LLM cleaning steps for user manual / specifications docs.
+
+    Performs, in order:
+      1. Convert HTML tables to Markdown tables
+      2. Remove TOC / content-page index lines
+
+    Image links are intentionally preserved (not stripped) so the LLM can
+    process figure captions and images remain in the final output.
+    """
+    md = html_tables_to_md(raw_md)
+    md = clean_toc_lines(md)
+    return md
+
+
 # ---------------------------------------------------------------------------
 # 3. LLM-based Markdown cleanup
 # ---------------------------------------------------------------------------

@@ -369,7 +369,7 @@ async def process_pdf(
             pdf_path.write_bytes(content)
 
             # Step 1: MinerU conversion
-            yield _sse({"type": "status", "step": "converting", "message": "Converting PDF with MinerU..."})
+            yield _sse({"type": "status", "step": "converting", "message": "Converting PDF with MinerU...", "percent": 5})
             try:
                 md_file, images_dir = doc_processor.convert_pdf_to_md(
                     pdf_path, tmp_dir / "mineru_output"
@@ -383,21 +383,21 @@ async def process_pdf(
                 raise RuntimeError("MinerU produced an empty Markdown file. This could mean the PDF is scanned without OCR or the conversion failed silently.")
 
             if subtype in ("user_manual", "specifications"):
-                # Copy images (only for non-API docs)
-                yield _sse({"type": "status", "step": "images", "message": "Copying extracted images..."})
-                img_count = doc_processor.copy_images(images_dir, raw_md)
+                # Step 2: Pre-cleanup (non-LLM): HTML tables + TOC lines
+                yield _sse({"type": "status", "step": "pre_cleaning", "message": "Pre-cleaning markdown (HTML tables, TOC lines)...", "percent": 30})
+                raw_md = doc_processor.clean_manual_md(raw_md)
 
-                # Report estimated tokens
+                # Report estimated tokens (after pre-cleanup)
                 est_tokens = doc_processor.estimate_tokens(raw_md)
                 yield _sse({
                     "type": "token_estimate",
                     "chars": len(raw_md),
                     "estimated_tokens": est_tokens,
-                    "images_copied": img_count,
+                    "images_copied": 0,
                 })
 
-                # Step 2: LLM cleanup
-                yield _sse({"type": "status", "step": "cleaning", "message": f"Cleaning markdown with {DOC_PROCESS_MODEL}..."})
+                # Step 3: LLM cleanup
+                yield _sse({"type": "status", "step": "cleaning", "message": f"Cleaning markdown with {DOC_PROCESS_MODEL}...", "percent": 50})
                 try:
                     cleaned_md = await doc_processor.cleanup_md_with_llm(
                         raw_md, DOC_PROCESS_API_URL, DOC_PROCESS_API_KEY, DOC_PROCESS_MODEL,
@@ -406,8 +406,20 @@ async def process_pdf(
                     yield _sse({"type": "error", "message": f"LLM cleanup failed: {e}"})
                     return
 
-                # Step 3: Save and register
-                yield _sse({"type": "status", "step": "saving", "message": "Saving cleaned doc and updating registry..."})
+                # Step 4: Copy images after LLM cleanup (use cleaned content to
+                # filter out refs that the LLM may have removed)
+                yield _sse({"type": "status", "step": "images", "message": "Copying extracted images...", "percent": 85})
+                img_count = doc_processor.copy_images(images_dir, cleaned_md)
+                # Update token estimate panel with final image count
+                yield _sse({
+                    "type": "token_estimate",
+                    "chars": len(cleaned_md),
+                    "estimated_tokens": doc_processor.estimate_tokens(cleaned_md),
+                    "images_copied": img_count,
+                })
+
+                # Step 5: Save and register
+                yield _sse({"type": "status", "step": "saving", "message": "Saving cleaned doc and updating registry...", "percent": 95})
                 skill_name = f"{device_slug}_{subtype}"
                 doc_path = SKILLS_DIR / "docs" / f"{skill_name}.md"
                 doc_path.write_text(cleaned_md, encoding="utf-8")
@@ -433,13 +445,14 @@ async def process_pdf(
 
             elif subtype == "programming_api":
                 # For API docs: skip image copy (images are just icons),
-                # strip all image links, save, then suggest splits.
+                # strip all image links, convert HTML tables, clean TOC lines,
+                # save, then suggest splits.
                 use_llm_split = llm_split.lower() in ("true", "1", "yes")
 
-                yield _sse({"type": "status", "step": "cleaning_images", "message": "Stripping icon image links from API doc..."})
-                raw_md = doc_processor.strip_image_links(raw_md)
+                yield _sse({"type": "status", "step": "cleaning_images", "message": "Pre-cleaning API doc (stripping images, HTML tables, TOC lines)...", "percent": 40})
+                raw_md = doc_processor.clean_api_md(raw_md)
 
-                # Report estimated tokens (after stripping images)
+                # Report estimated tokens (after pre-cleanup)
                 est_tokens = doc_processor.estimate_tokens(raw_md)
                 yield _sse({
                     "type": "token_estimate",
@@ -448,14 +461,14 @@ async def process_pdf(
                     "images_copied": 0,
                 })
 
-                yield _sse({"type": "status", "step": "saving_raw", "message": "Saving converted API doc..."})
+                yield _sse({"type": "status", "step": "saving_raw", "message": "Saving converted API doc...", "percent": 60})
                 skill_name = f"{device_slug}_programming_api"
                 doc_path = SKILLS_DIR / "docs" / f"{skill_name}.md"
                 doc_path.write_text(raw_md, encoding="utf-8")
 
                 if use_llm_split:
                     # LLM-based split: send full doc to LLM for better grouping decisions
-                    yield _sse({"type": "status", "step": "llm_splitting", "message": f"Analyzing API doc with LLM ({DOC_PROCESS_MODEL})... This may take a while and will consume many tokens."})
+                    yield _sse({"type": "status", "step": "llm_splitting", "message": f"Analyzing API doc with LLM ({DOC_PROCESS_MODEL})... This may take a while and will consume many tokens.", "percent": 75})
                     try:
                         llm_splits = await doc_processor.llm_split_api_doc(
                             raw_md,
@@ -477,7 +490,7 @@ async def process_pdf(
                     })
                 else:
                     # Header-only analysis: send only headers to LLM
-                    yield _sse({"type": "status", "step": "analyzing", "message": f"Analyzing API doc structure with {DOC_PROCESS_MODEL}..."})
+                    yield _sse({"type": "status", "step": "analyzing", "message": f"Analyzing API doc structure with {DOC_PROCESS_MODEL}...", "percent": 75})
                     try:
                         splits = await doc_processor.suggest_api_split(
                             raw_md,

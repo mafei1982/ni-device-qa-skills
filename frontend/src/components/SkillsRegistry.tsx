@@ -47,9 +47,11 @@ function badgeColor(skill: Skill): string {
 type ProcessingStep =
   | "idle"
   | "converting"
+  | "pre_cleaning"
   | "images"
   | "token_warning"
   | "cleaning"
+  | "cleaning_images"
   | "saving"
   | "saving_raw"
   | "analyzing"
@@ -61,8 +63,10 @@ type ProcessingStep =
 
 const STEP_LABELS: Record<string, string> = {
   converting: "Converting PDF with MinerU…",
+  pre_cleaning: "Pre-cleaning markdown (HTML tables, TOC lines)…",
   images: "Copying extracted images…",
   cleaning: "Cleaning markdown with LLM…",
+  cleaning_images: "Pre-cleaning API doc…",
   saving: "Saving and registering…",
   saving_raw: "Saving converted API doc…",
   analyzing: "Analyzing API doc structure…",
@@ -105,6 +109,7 @@ export default function SkillsRegistry() {
   // PDF processing state
   const [processingStep, setProcessingStep] = useState<ProcessingStep>("idle");
   const [processingMessage, setProcessingMessage] = useState("");
+  const [processingPercent, setProcessingPercent] = useState<number | null>(null);
   const [tokenEstimate, setTokenEstimate] = useState<{
     chars: number;
     tokens: number;
@@ -242,6 +247,7 @@ export default function SkillsRegistry() {
   function resetProcessingState() {
     setProcessingStep("idle");
     setProcessingMessage("");
+    setProcessingPercent(null);
     setTokenEstimate(null);
     setSplitPreview(null);
     setWantsCleanSplit(false);
@@ -309,6 +315,7 @@ export default function SkillsRegistry() {
             case "status":
               setProcessingStep((event.step as ProcessingStep) || "converting");
               setProcessingMessage(event.message || "");
+              if (event.percent !== undefined) setProcessingPercent(event.percent);
               break;
             case "token_estimate":
               setTokenEstimate({
@@ -319,6 +326,7 @@ export default function SkillsRegistry() {
               break;
             case "split_preview":
               setProcessingStep("split_preview");
+              setProcessingPercent(100);
               setSplitPreview({
                 sourceSkill: event.source_skill || "",
                 splits: event.splits || [],
@@ -327,6 +335,7 @@ export default function SkillsRegistry() {
               break;
             case "done":
               setProcessingStep("done");
+              setProcessingPercent(100);
               setUploading(false);
               setTimeout(() => {
                 setShowUploadForm(false);
@@ -378,6 +387,7 @@ export default function SkillsRegistry() {
             case "status":
               setProcessingStep((event.step as ProcessingStep) || "cleaning");
               setProcessingMessage(event.message || "");
+              if (event.percent !== undefined) setProcessingPercent(event.percent);
               break;
             case "token_estimate":
               setTokenEstimate({
@@ -388,6 +398,7 @@ export default function SkillsRegistry() {
               break;
             case "split_preview":
               setProcessingStep("split_preview");
+              setProcessingPercent(100);
               setSplitPreview({
                 sourceSkill: event.source_skill || "",
                 splits: event.splits || [],
@@ -396,6 +407,7 @@ export default function SkillsRegistry() {
               break;
             case "done":
               setProcessingStep("done");
+              setProcessingPercent(100);
               setUploading(false);
               setTimeout(() => {
                 setShowUploadForm(false);
@@ -678,7 +690,7 @@ export default function SkillsRegistry() {
 
             {/* Processing progress */}
             {processingStep !== "idle" && processingStep !== "split_preview" && (
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 space-y-2">
                 <div className="flex items-center gap-2 text-sm">
                   {processingStep === "done" ? (
                     <Check size={16} className="text-green-500" />
@@ -696,7 +708,22 @@ export default function SkillsRegistry() {
                   }>
                     {processingMessage || STEP_LABELS[processingStep] || "Processing…"}
                   </span>
+                  {processingPercent !== null && processingStep !== "error" && (
+                    <span className="ml-auto text-xs font-medium text-gray-500 tabular-nums">
+                      {processingPercent}%
+                    </span>
+                  )}
                 </div>
+                {processingPercent !== null && processingStep !== "error" && (
+                  <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-300 ${
+                        processingStep === "done" ? "bg-green-500" : "bg-blue-500"
+                      }`}
+                      style={{ width: `${processingPercent}%` }}
+                    />
+                  </div>
+                )}
               </div>
             )}
 
