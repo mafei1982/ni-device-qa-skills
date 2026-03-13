@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -22,10 +22,16 @@ import Modal from "./Modal";
 
 type UploadRow = {
   file: File;
+  docName: string;
   subtype: "user_manual" | "specifications" | "programming_api";
-  language: "" | "c" | "python" | "c#" | "labview";
+  device: string;
+  language: string;
   split_mode: "headers" | "full";
 };
+
+function defaultDocName(filename: string): string {
+  return filename.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_|_$/g, "").toLowerCase();
+}
 
 function normalizeMdImage(taskId: string, src: string): string {
   const clean = src.replace(/\\/g, "/").trim();
@@ -60,12 +66,14 @@ export default function StandaloneDocProcessor() {
   const [rows, setRows] = useState<UploadRow[]>([]);
   const [processLoading, setProcessLoading] = useState(false);
   const [processLog, setProcessLog] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [activeDoc, setActiveDoc] = useState<StandaloneDocRecord | null>(null);
   const [activeContent, setActiveContent] = useState("");
   const [activeDescription, setActiveDescription] = useState("");
   const [activeSubtype, setActiveSubtype] = useState<"user_manual" | "specifications" | "programming_api">("user_manual");
-  const [activeLanguage, setActiveLanguage] = useState<"" | "c" | "python" | "c#" | "labview">("");
+  const [activeDevice, setActiveDevice] = useState("");
+  const [activeLanguage, setActiveLanguage] = useState("");
   const [docModalLoading, setDocModalLoading] = useState(false);
   const [docModalError, setDocModalError] = useState<string | null>(null);
   const [docSaving, setDocSaving] = useState(false);
@@ -141,14 +149,21 @@ export default function StandaloneDocProcessor() {
   }
 
   function handleFileSelect(files: FileList | null) {
-    if (!files) return;
-    const nextRows: UploadRow[] = Array.from(files).map((file) => ({
+    if (!files || files.length === 0) return;
+    const newRows: UploadRow[] = Array.from(files).map((file) => ({
       file,
+      docName: defaultDocName(file.name),
       subtype: "user_manual",
+      device: selectedTask?.category || "",
       language: "",
       split_mode: "headers",
     }));
-    setRows(nextRows);
+    setRows((prev) => [...prev, ...newRows]);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  function removeRow(index: number) {
+    setRows((prev) => prev.filter((_, i) => i !== index));
   }
 
   function updateRow(index: number, patch: Partial<UploadRow>) {
@@ -159,6 +174,10 @@ export default function StandaloneDocProcessor() {
     if (!selectedTaskId || rows.length === 0) return;
 
     for (const row of rows) {
+      if ((row.subtype === "user_manual" || row.subtype === "specifications") && !row.device.trim()) {
+        setProcessLog((prev) => [...prev, `Error: ${row.file.name} requires a device for ${row.subtype}.`]);
+        return;
+      }
       if (row.subtype === "programming_api" && !row.language) {
         setProcessLog((prev) => [...prev, `Error: ${row.file.name} requires API language.`]);
         return;
@@ -171,8 +190,10 @@ export default function StandaloneDocProcessor() {
     const files = rows.map((r) => r.file);
     const cfg: StandaloneProcessConfig[] = rows.map((r) => ({
       subtype: r.subtype,
+      device: r.subtype === "programming_api" ? undefined : r.device,
       language: r.language,
       split_mode: r.subtype === "programming_api" ? r.split_mode : "headers",
+      doc_name: r.docName,
     }));
 
     try {
@@ -226,6 +247,7 @@ export default function StandaloneDocProcessor() {
       setActiveContent(data.content);
       setActiveDescription(data.doc.skill_entry.description);
       setActiveSubtype(data.doc.subtype);
+      setActiveDevice(data.doc.skill_entry.device || selectedTask?.category || "");
       setActiveLanguage((data.doc.language as UploadRow["language"]) || "");
     } catch (err) {
       setDocModalError(err instanceof Error ? err.message : "Failed to open doc.");
@@ -239,6 +261,7 @@ export default function StandaloneDocProcessor() {
     setActiveContent("");
     setActiveDescription("");
     setActiveSubtype("user_manual");
+    setActiveDevice("");
     setActiveLanguage("");
     setDocModalError(null);
     setDocModalLoading(false);
@@ -253,6 +276,7 @@ export default function StandaloneDocProcessor() {
       await updateStandaloneDocMeta(selectedTaskId, activeDoc.id, {
         description: activeDescription,
         subtype: activeSubtype,
+        device: activeSubtype === "programming_api" ? undefined : activeDevice,
         language: activeSubtype === "programming_api" ? activeLanguage : "",
       });
       await refreshTaskDetail(selectedTaskId);
@@ -359,12 +383,21 @@ export default function StandaloneDocProcessor() {
               </p>
 
               <input
+                ref={fileInputRef}
                 type="file"
                 multiple
                 accept=".pdf,.md"
                 onChange={(e) => handleFileSelect(e.target.files)}
-                className="mt-3 block w-full text-sm"
+                className="hidden"
               />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={processLoading}
+                className="mt-3 inline-flex items-center gap-1.5 rounded border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-60"
+              >
+                + Add Files
+              </button>
 
               {rows.length > 0 && (
                 <div className="mt-3 overflow-x-auto">
@@ -372,15 +405,26 @@ export default function StandaloneDocProcessor() {
                     <thead className="bg-gray-100 text-gray-700">
                       <tr>
                         <th className="border border-gray-200 px-2 py-1 text-left">File</th>
+                        <th className="border border-gray-200 px-2 py-1 text-left">Doc Name</th>
                         <th className="border border-gray-200 px-2 py-1 text-left">Type</th>
+                        <th className="border border-gray-200 px-2 py-1 text-left">Device</th>
                         <th className="border border-gray-200 px-2 py-1 text-left">Language</th>
                         <th className="border border-gray-200 px-2 py-1 text-left">API Split</th>
+                        <th className="border border-gray-200 px-2 py-1 text-left"></th>
                       </tr>
                     </thead>
                     <tbody>
                       {rows.map((row, i) => (
                         <tr key={`${row.file.name}-${i}`}>
-                          <td className="border border-gray-200 px-2 py-1">{row.file.name}</td>
+                          <td className="border border-gray-200 px-2 py-1 max-w-[140px] truncate" title={row.file.name}>{row.file.name}</td>
+                          <td className="border border-gray-200 px-2 py-1">
+                            <input
+                              className="w-full rounded border border-gray-300 px-2 py-1"
+                              value={row.docName}
+                              onChange={(e) => updateRow(i, { docName: e.target.value })}
+                              placeholder="doc_name"
+                            />
+                          </td>
                           <td className="border border-gray-200 px-2 py-1">
                             <select
                               className="rounded border border-gray-300 px-2 py-1"
@@ -401,38 +445,60 @@ export default function StandaloneDocProcessor() {
                             </select>
                           </td>
                           <td className="border border-gray-200 px-2 py-1">
-                            {row.subtype === "programming_api" ? (
-                              <select
-                                className="rounded border border-gray-300 px-2 py-1"
-                                value={row.language}
-                                onChange={(e) =>
-                                  updateRow(i, { language: e.target.value as UploadRow["language"] })
-                                }
-                              >
-                                <option value="c">C</option>
-                                <option value="python">Python</option>
-                                <option value="c#">C#</option>
-                                <option value="labview">LabVIEW</option>
-                              </select>
+                            {row.subtype !== "programming_api" ? (
+                              <input
+                                className="w-full rounded border border-gray-300 px-2 py-1"
+                                value={row.device}
+                                onChange={(e) => updateRow(i, { device: e.target.value })}
+                                placeholder="e.g. pxie_4135"
+                              />
                             ) : (
                               <span className="text-gray-400">N/A</span>
                             )}
                           </td>
                           <td className="border border-gray-200 px-2 py-1">
                             {row.subtype === "programming_api" ? (
-                              <select
-                                className="rounded border border-gray-300 px-2 py-1"
-                                value={row.split_mode}
+                              <input
+                                className="w-full rounded border border-gray-300 px-2 py-1"
+                                value={row.language}
                                 onChange={(e) =>
-                                  updateRow(i, { split_mode: e.target.value as UploadRow["split_mode"] })
+                                  updateRow(i, { language: e.target.value })
                                 }
-                              >
-                                <option value="headers">headers</option>
-                                <option value="full">full</option>
-                              </select>
+                                placeholder="e.g. c, python, c#"
+                              />
                             ) : (
                               <span className="text-gray-400">N/A</span>
                             )}
+                          </td>
+                          <td className="border border-gray-200 px-2 py-1">
+                            {row.subtype === "programming_api" ? (
+                              <div className="flex items-center gap-1">
+                                <select
+                                  className="rounded border border-gray-300 px-2 py-1"
+                                  value={row.split_mode}
+                                  onChange={(e) =>
+                                    updateRow(i, { split_mode: e.target.value as UploadRow["split_mode"] })
+                                  }
+                                >
+                                  <option value="headers">headers</option>
+                                  <option value="full">full</option>
+                                </select>
+                                {row.split_mode === "full" && (
+                                  <span className="text-amber-600 text-[10px] font-medium" title="Full-content split sends the entire document to the LLM. This consumes significantly more tokens and costs more.">⚠ High token cost</span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-gray-400">N/A</span>
+                            )}
+                          </td>
+                          <td className="border border-gray-200 px-2 py-1">
+                            <button
+                              onClick={() => removeRow(i)}
+                              className="text-red-500 hover:text-red-700 text-xs"
+                              title="Remove file"
+                            >
+                              ✕
+                            </button>
                           </td>
                         </tr>
                       ))}
@@ -480,6 +546,7 @@ export default function StandaloneDocProcessor() {
                       <tr>
                         <th className="border border-gray-200 px-2 py-1 text-left">Filename</th>
                         <th className="border border-gray-200 px-2 py-1 text-left">Subtype</th>
+                        <th className="border border-gray-200 px-2 py-1 text-left">Device</th>
                         <th className="border border-gray-200 px-2 py-1 text-left">Language</th>
                         <th className="border border-gray-200 px-2 py-1 text-left">Description</th>
                         <th className="border border-gray-200 px-2 py-1 text-left">Actions</th>
@@ -490,6 +557,7 @@ export default function StandaloneDocProcessor() {
                         <tr key={doc.id}>
                           <td className="border border-gray-200 px-2 py-1">{doc.filename}</td>
                           <td className="border border-gray-200 px-2 py-1">{doc.subtype}</td>
+                          <td className="border border-gray-200 px-2 py-1">{doc.skill_entry.device || "-"}</td>
                           <td className="border border-gray-200 px-2 py-1">{doc.language || "-"}</td>
                           <td className="border border-gray-200 px-2 py-1">{doc.skill_entry.description}</td>
                           <td className="border border-gray-200 px-2 py-1 space-x-2">
@@ -549,30 +617,36 @@ export default function StandaloneDocProcessor() {
                 </label>
 
                 <label className="text-xs text-gray-700">
-                  Language
-                  <select
+                  Device
+                  <input
                     className="mt-1 w-full rounded border border-gray-300 px-2 py-1 text-xs"
-                    value={activeLanguage}
-                    onChange={(e) => setActiveLanguage(e.target.value as UploadRow["language"])}
-                    disabled={activeSubtype !== "programming_api"}
-                  >
-                    <option value="">(none)</option>
-                    <option value="c">C</option>
-                    <option value="python">Python</option>
-                    <option value="c#">C#</option>
-                    <option value="labview">LabVIEW</option>
-                  </select>
+                    value={activeDevice}
+                    onChange={(e) => setActiveDevice(e.target.value)}
+                    disabled={activeSubtype === "programming_api"}
+                    placeholder="e.g. pxie_4135"
+                  />
                 </label>
 
                 <label className="text-xs text-gray-700">
-                  Description
+                  Language
                   <input
                     className="mt-1 w-full rounded border border-gray-300 px-2 py-1 text-xs"
-                    value={activeDescription}
-                    onChange={(e) => setActiveDescription(e.target.value)}
+                    value={activeLanguage}
+                    onChange={(e) => setActiveLanguage(e.target.value)}
+                    disabled={activeSubtype !== "programming_api"}
+                    placeholder="e.g. c, python, c#"
                   />
                 </label>
               </div>
+
+              <label className="block text-xs text-gray-700">
+                Description
+                <input
+                  className="mt-1 w-full rounded border border-gray-300 px-2 py-1 text-xs"
+                  value={activeDescription}
+                  onChange={(e) => setActiveDescription(e.target.value)}
+                />
+              </label>
 
               <textarea
                 className="h-56 w-full rounded border border-gray-300 p-2 font-mono text-xs"

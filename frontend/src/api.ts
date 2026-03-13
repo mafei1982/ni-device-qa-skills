@@ -394,8 +394,10 @@ export interface StandaloneTaskDetail {
 
 export interface StandaloneProcessConfig {
   subtype: "user_manual" | "specifications" | "programming_api";
-  language?: "c" | "python" | "c#" | "labview" | "";
+  device?: string;
+  language?: string;
   split_mode?: "headers" | "full";
+  doc_name?: string;
 }
 
 export interface StandaloneProcessEvent {
@@ -529,7 +531,8 @@ export async function updateStandaloneDocMeta(
   payload: {
     description?: string;
     subtype?: "user_manual" | "specifications" | "programming_api";
-    language?: "c" | "python" | "c#" | "labview" | "";
+    device?: string;
+    language?: string;
   },
 ): Promise<{ updated: boolean; doc: StandaloneDocRecord }> {
   const res = await axios.patch<{ updated: boolean; doc: StandaloneDocRecord }>(

@@ -23,7 +23,6 @@ logger = logging.getLogger("ni_device_qa.standalone_tasks")
 router = APIRouter(prefix="/api/standalone", tags=["standalone-tasks"])
 
 DOC_TYPES = {"user_manual", "specifications", "programming_api"}
-API_LANGS = {"c", "python", "c#", "labview"}
 SPLIT_MODES = {"headers", "full"}
 
 TASKS_ROOT = Path(__file__).parent / "storage" / "tasks"
@@ -157,6 +156,7 @@ The following registry is auto-generated and synchronized with task docs.
 
 class DocProcessInput(BaseModel):
     subtype: str
+    device: str = ""
     language: str = ""
     split_mode: str = "headers"
 
@@ -168,6 +168,7 @@ class UpdateDocContentRequest(BaseModel):
 class UpdateDocMetaRequest(BaseModel):
     description: str | None = None
     subtype: str | None = None
+    device: str | None = None
     language: str | None = None
 
 
@@ -310,6 +311,7 @@ def _build_skill_entry(
     *,
     task_id: str,
     category: str,
+    device: str,
     skill_name: str,
     subtype: str,
     source_name: str,
@@ -324,7 +326,7 @@ def _build_skill_entry(
         "name": skill_name,
         "type": "doc",
         "subtype": subtype,
-        "device": category,
+        "device": device,
         "category": category,
         "description": description,
     }
@@ -466,7 +468,7 @@ async def process_task_files(
     """Process multiple files sequentially for a task.
 
     docs_config is a JSON array aligned by file order:
-      [{"subtype":"user_manual","language":"","split_mode":"headers"}, ...]
+      [{"subtype":"user_manual","device":"pxie_4135","language":"","split_mode":"headers"}, ...]
     """
     _ensure_task_structure(task_id)
     manifest = _load_manifest(task_id)
@@ -490,13 +492,10 @@ async def process_task_files(
             raise HTTPException(status_code=400, detail=f"Invalid subtype: {subtype}")
         if subtype == "programming_api":
             lang = _normalize_api_language(str(item.get("language", "")))
-            if lang not in API_LANGS:
+            if not lang:
                 raise HTTPException(
                     status_code=400,
-                    detail=(
-                        "programming_api requires language in "
-                        f"{sorted(API_LANGS)}"
-                    ),
+                    detail="programming_api requires a non-empty language.",
                 )
 
             split_mode = str(item.get("split_mode", "headers")).strip().lower() or "headers"
@@ -504,6 +503,13 @@ async def process_task_files(
                 raise HTTPException(
                     status_code=400,
                     detail=f"Invalid split_mode '{split_mode}'. Use one of {sorted(SPLIT_MODES)}.",
+                )
+        else:
+            device = _slugify(str(item.get("device", "")))
+            if not device:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"{subtype} requires a non-empty device.",
                 )
 
     async def event_stream():
@@ -516,6 +522,7 @@ async def process_task_files(
             for idx, up in enumerate(files, start=1):
                 cfg = configs_raw[idx - 1]
                 subtype = str(cfg.get("subtype", "")).strip()
+                device_raw = str(cfg.get("device", "")).strip()
                 language_raw = str(cfg.get("language", "")).strip()
                 split_mode = str(cfg.get("split_mode", "headers")).strip().lower() or "headers"
 
@@ -523,21 +530,28 @@ async def process_task_files(
                     raise RuntimeError(f"File {up.filename}: invalid subtype '{subtype}'.")
 
                 if subtype == "programming_api":
+                    device_norm = category
                     lang_norm = _normalize_api_language(language_raw)
-                    if lang_norm not in API_LANGS:
+                    if not lang_norm:
                         raise RuntimeError(
-                            f"File {up.filename}: programming_api requires language in {sorted(API_LANGS)}."
+                            f"File {up.filename}: programming_api requires a non-empty language."
                         )
                     if split_mode not in SPLIT_MODES:
                         raise RuntimeError(
                             f"File {up.filename}: split_mode must be one of {sorted(SPLIT_MODES)}."
                         )
                 else:
+                    device_norm = _slugify(device_raw)
+                    if not device_norm:
+                        raise RuntimeError(
+                            f"File {up.filename}: {subtype} requires a non-empty device."
+                        )
                     lang_norm = ""
                     split_mode = "headers"
 
                 filename = up.filename or f"upload_{idx}"
-                base_slug = _slugify(Path(filename).stem) or f"doc_{idx}"
+                custom_name = str(cfg.get("doc_name", "")).strip()
+                base_slug = _slugify(custom_name) if custom_name else (_slugify(Path(filename).stem) or f"doc_{idx}")
                 ext = Path(filename).suffix.lower()
                 if ext not in {".pdf", ".md"}:
                     raise RuntimeError(f"File {filename}: only .pdf and .md are supported.")
@@ -678,6 +692,7 @@ async def process_task_files(
                     entry = _build_skill_entry(
                         task_id=task_id,
                         category=category,
+                        device=device_norm,
                         skill_name=skill_base,
                         subtype=subtype,
                         source_name=filename,
@@ -784,6 +799,7 @@ async def process_task_files(
                         entry = _build_skill_entry(
                             task_id=task_id,
                             category=category,
+                            device=device_norm,
                             skill_name=unique_stem,
                             subtype="programming_api",
                             source_name=filename,
@@ -874,18 +890,30 @@ async def update_task_doc_meta(task_id: str, doc_id: str, req: UpdateDocMetaRequ
     manifest = _load_manifest(task_id)
     doc = _find_doc_or_404(manifest, doc_id)
     skill_entry = doc["skill_entry"]
+    category = manifest["category"]
 
     if req.subtype is not None:
         if req.subtype not in DOC_TYPES:
             raise HTTPException(status_code=400, detail=f"Invalid subtype: {req.subtype}")
         doc["subtype"] = req.subtype
         skill_entry["subtype"] = req.subtype
+        if req.subtype == "programming_api":
+            skill_entry["device"] = category
+
+    if req.device is not None:
+        if doc["subtype"] == "programming_api":
+            skill_entry["device"] = category
+        else:
+            device = _slugify(req.device)
+            if not device:
+                raise HTTPException(status_code=400, detail=f"{doc['subtype']} requires a non-empty device.")
+            skill_entry["device"] = device
 
     if req.language is not None:
-        lang = req.language.strip().lower()
+        lang = _normalize_api_language(req.language)
         if doc["subtype"] == "programming_api":
-            if lang not in API_LANGS:
-                raise HTTPException(status_code=400, detail=f"Invalid language '{req.language}'.")
+            if not lang:
+                raise HTTPException(status_code=400, detail="programming_api requires a non-empty language.")
             doc["language"] = lang
             skill_entry["language"] = lang
         else:

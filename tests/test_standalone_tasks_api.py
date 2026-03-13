@@ -131,3 +131,24 @@ def test_delete_doc_removes_doc_images_and_registry_entry(tmp_path: Path):
     skill_md = sta._skill_path(task_id).read_text(encoding="utf-8")
     assert "seed_user_manual" not in skill_md
     assert sta.REGISTRY_START in skill_md
+
+
+def test_update_doc_meta_updates_device_for_user_manual(tmp_path: Path):
+    client = _build_client(tmp_path)
+    task_id = "task_seed"
+    category = "dcpower"
+
+    _seed_doc_task(task_id, category)
+
+    res = client.patch(
+        f"/api/standalone/tasks/{task_id}/docs/doc_1/meta",
+        json={"device": "PXIe-4135"},
+    )
+    assert res.status_code == 200
+
+    manifest = json.loads(sta._manifest_path(task_id).read_text(encoding="utf-8"))
+    doc = manifest["docs"][0]
+    assert doc["skill_entry"]["device"] == "pxie_4135"
+
+    skill_md = sta._skill_path(task_id).read_text(encoding="utf-8")
+    assert '"device": "pxie_4135"' in skill_md
