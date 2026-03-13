@@ -21,13 +21,13 @@ export default function ArchitectureDiagram() {
       <h2 className="text-base font-semibold text-gray-800 mb-4">
         System Architecture
       </h2>
-      <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-0 bg-gray-50 rounded-xl p-4 border border-gray-200 overflow-x-auto">
+      <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-0 bg-[#F7F8FA] rounded p-3 border border-gray-200 overflow-x-auto">
         {steps.map((step, i) => (
           <div
             key={step.label}
             className="flex flex-col md:flex-row md:items-center"
           >
-            <div className="flex flex-col items-center justify-center bg-white border border-gray-300 rounded-lg px-4 py-3 shadow-sm min-w-[130px] text-center">
+            <div className="flex flex-col items-center justify-center bg-white border border-gray-300 rounded px-3 py-2.5 shadow-[0_1px_2px_rgba(0,0,0,0.04)] min-w-[120px] text-center">
               <span className="text-sm font-semibold text-gray-800">
                 {step.label}
               </span>

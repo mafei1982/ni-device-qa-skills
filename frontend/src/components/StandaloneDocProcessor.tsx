@@ -340,8 +340,8 @@ export default function StandaloneDocProcessor() {
   }
 
   return (
-    <div className="flex h-full min-h-0 bg-gray-50">
-      <aside className="w-72 border-r border-gray-200 bg-white p-4 overflow-y-auto">
+    <div className="flex h-full min-h-0 bg-[#F7F8FA]">
+      <aside className="w-64 border-r border-gray-200 bg-white p-3 overflow-y-auto">
         <h2 className="text-sm font-semibold text-gray-900">Standalone Tasks</h2>
         <p className="mt-1 text-xs text-gray-500">Persistent category-level processing tasks.</p>
 
@@ -355,7 +355,7 @@ export default function StandaloneDocProcessor() {
           <button
             onClick={handleCreateTask}
             disabled={createLoading || !category.trim()}
-            className="w-full rounded bg-blue-600 px-3 py-2 text-sm font-medium text-white disabled:opacity-60"
+            className="w-full rounded bg-ni-600 px-3 py-2 text-sm font-medium text-white disabled:opacity-60"
           >
             {createLoading ? "Creating..." : "Create Task"}
           </button>
@@ -375,7 +375,7 @@ export default function StandaloneDocProcessor() {
           {tasks.map((task) => (
             <div
               key={task.task_id}
-              className={`rounded border p-2 ${selectedTaskId === task.task_id ? "border-blue-500 bg-blue-50" : "border-gray-200 bg-white"}`}
+              className={`rounded border p-2 ${selectedTaskId === task.task_id ? "border-ni-500 bg-ni-50" : "border-gray-200 bg-white"}`}
             >
               <button
                 onClick={() => setSelectedTaskId(task.task_id)}
@@ -411,7 +411,7 @@ export default function StandaloneDocProcessor() {
                 {taskStatus === "done" ? (
                   <button
                     disabled={downloading}
-                    className="inline-flex items-center gap-2 rounded bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-60"
+                    className="inline-flex items-center gap-2 rounded bg-ni-600 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-60"
                     onClick={async () => {
                       setDownloading(true);
                       try {
@@ -480,16 +480,16 @@ export default function StandaloneDocProcessor() {
               {rows.length > 0 && (
                 <div className="mt-3 overflow-x-auto">
                   <table className="min-w-full border border-gray-200 text-xs">
-                    <thead className="bg-gray-100 text-gray-700">
+                    <thead className="bg-gray-700 text-gray-100">
                       <tr>
-                        <th className="border border-gray-200 px-2 py-1 text-left">File</th>
-                        <th className="border border-gray-200 px-2 py-1 text-left">Doc Name</th>
-                        <th className="border border-gray-200 px-2 py-1 text-left">Type</th>
-                        <th className="border border-gray-200 px-2 py-1 text-left">Device</th>
-                        <th className="border border-gray-200 px-2 py-1 text-left">Language</th>
-                        <th className="border border-gray-200 px-2 py-1 text-left">API Split</th>
-                        <th className="border border-gray-200 px-2 py-1 text-left">LLM</th>
-                        <th className="border border-gray-200 px-2 py-1 text-left"></th>
+                        <th className="border border-gray-600 px-2 py-1 text-left">File</th>
+                        <th className="border border-gray-600 px-2 py-1 text-left">Doc Name</th>
+                        <th className="border border-gray-600 px-2 py-1 text-left">Type</th>
+                        <th className="border border-gray-600 px-2 py-1 text-left">Device</th>
+                        <th className="border border-gray-600 px-2 py-1 text-left">Language</th>
+                        <th className="border border-gray-600 px-2 py-1 text-left">API Split</th>
+                        <th className="border border-gray-600 px-2 py-1 text-left">LLM</th>
+                        <th className="border border-gray-600 px-2 py-1 text-left"></th>
                       </tr>
                     </thead>
                     <tbody>
@@ -617,7 +617,7 @@ export default function StandaloneDocProcessor() {
                 <button
                   onClick={handleProcessBatch}
                   disabled={processLoading || rows.length === 0 || taskLoading}
-                  className="inline-flex items-center gap-2 rounded bg-blue-600 px-3 py-2 text-xs font-medium text-white disabled:opacity-60"
+                  className="inline-flex items-center gap-2 rounded bg-ni-600 px-3 py-2 text-xs font-medium text-white disabled:opacity-60"
                 >
                   {processLoading && (
                     <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
@@ -654,14 +654,14 @@ export default function StandaloneDocProcessor() {
               ) : (
                 <div className="mt-2 overflow-x-auto">
                   <table className="min-w-full border border-gray-200 text-xs">
-                    <thead className="bg-gray-100 text-gray-700">
+                    <thead className="bg-gray-700 text-gray-100">
                       <tr>
-                        <th className="border border-gray-200 px-2 py-1 text-left">Filename</th>
-                        <th className="border border-gray-200 px-2 py-1 text-left">Subtype</th>
-                        <th className="border border-gray-200 px-2 py-1 text-left">Device</th>
-                        <th className="border border-gray-200 px-2 py-1 text-left">Language</th>
-                        <th className="border border-gray-200 px-2 py-1 text-left">Description</th>
-                        <th className="border border-gray-200 px-2 py-1 text-left">Actions</th>
+                        <th className="border border-gray-600 px-2 py-1 text-left">Filename</th>
+                        <th className="border border-gray-600 px-2 py-1 text-left">Subtype</th>
+                        <th className="border border-gray-600 px-2 py-1 text-left">Device</th>
+                        <th className="border border-gray-600 px-2 py-1 text-left">Language</th>
+                        <th className="border border-gray-600 px-2 py-1 text-left">Description</th>
+                        <th className="border border-gray-600 px-2 py-1 text-left">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -675,7 +675,7 @@ export default function StandaloneDocProcessor() {
                           <td className="border border-gray-200 px-2 py-1 space-x-2">
                             <button
                               onClick={() => openDoc(doc)}
-                              className="rounded border border-blue-300 px-2 py-1 text-blue-700"
+                              className="rounded border border-ni-300 px-2 py-1 text-ni-700"
                             >
                               View / Edit
                             </button>
@@ -793,7 +793,7 @@ export default function StandaloneDocProcessor() {
                 <button
                   onClick={saveDocChanges}
                   disabled={docSaving}
-                  className="rounded bg-blue-600 px-3 py-2 text-xs font-medium text-white disabled:opacity-60"
+                  className="rounded bg-ni-600 px-3 py-2 text-xs font-medium text-white disabled:opacity-60"
                 >
                   {docSaving ? "Saving..." : "Save"}
                 </button>

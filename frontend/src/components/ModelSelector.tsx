@@ -86,7 +86,7 @@ export default function ModelSelector({ value, onChange }: Props) {
         Model
       </label>
       <div
-        className="flex items-center gap-1 border border-gray-300 rounded-lg px-3 py-2 bg-white cursor-pointer hover:border-blue-400 transition-colors"
+        className="flex items-center gap-1 border border-gray-300 rounded px-3 py-1.5 bg-white cursor-pointer hover:border-ni-500 transition-colors"
         onClick={() => {
           setOpen(!open);
           setTimeout(() => inputRef.current?.focus(), 0);
@@ -114,7 +114,7 @@ export default function ModelSelector({ value, onChange }: Props) {
       </div>
 
       {open && (
-        <ul className="absolute z-50 mt-1 w-full max-h-64 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg">
+        <ul className="absolute z-50 mt-1 w-full max-h-64 overflow-y-auto bg-white border border-gray-200 rounded shadow-md">
           {filtered.length === 0 && (
             <li className="px-3 py-2 text-xs text-gray-400">No models found</li>
           )}
@@ -122,9 +122,9 @@ export default function ModelSelector({ value, onChange }: Props) {
             <li
               key={m.id}
               onClick={() => handleSelect(m.id)}
-              className={`px-3 py-2 text-sm cursor-pointer hover:bg-blue-50 transition-colors ${
+              className={`px-3 py-1.5 text-sm cursor-pointer hover:bg-ni-50 transition-colors ${
                 m.id === value
-                  ? "bg-blue-50 text-blue-700 font-medium"
+                  ? "bg-ni-50 text-ni-700 font-medium"
                   : "text-gray-700"
               }`}
             >

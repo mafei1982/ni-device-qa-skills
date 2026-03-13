@@ -142,11 +142,11 @@ export default function ChatPanel({ messages, onMessagesChange, modelId }: Props
 
   return (
     <>
-      <div className="px-5 py-4 text-sm font-semibold border-b border-gray-200 bg-white text-gray-800">
+      <div className="px-4 py-3 text-sm font-semibold border-b border-gray-200 bg-white text-gray-900">
         Chat
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
+      <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-3">
         {messages.length === 0 && (
           <div className="text-gray-400 text-sm text-center py-8">
             Ask a question about NI hardware devices.
@@ -167,7 +167,7 @@ export default function ChatPanel({ messages, onMessagesChange, modelId }: Props
         <div ref={bottomRef} />
       </div>
 
-      <div className="p-4 bg-white border-t border-gray-200">
+      <div className="p-3 bg-white border-t border-gray-200">
         <div className="flex gap-2 items-end">
           <textarea
             ref={textareaRef}
@@ -177,13 +177,13 @@ export default function ChatPanel({ messages, onMessagesChange, modelId }: Props
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             disabled={loading}
-            className="flex-1 resize-none rounded-lg px-3 py-2 border border-gray-300 text-sm leading-snug max-h-40 overflow-y-auto outline-none focus:border-blue-500 transition-colors font-[inherit]"
+            className="flex-1 resize-none rounded px-3 py-2 border border-gray-300 text-sm leading-snug max-h-40 overflow-y-auto outline-none focus:border-ni-600 transition-colors font-[inherit]"
           />
           <button
             onClick={handleSend}
             disabled={loading || !input.trim()}
             title="Send"
-            className="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed transition-colors flex-shrink-0"
+            className="flex items-center justify-center w-9 h-9 rounded bg-ni-600 text-white hover:bg-ni-700 disabled:bg-ni-300 disabled:cursor-not-allowed transition-colors flex-shrink-0"
           >
             {loading ? (
               <Loader2 size={18} className="animate-spin" />

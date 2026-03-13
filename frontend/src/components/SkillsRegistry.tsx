@@ -30,10 +30,10 @@ import {
 import Modal from "./Modal";
 
 const typeBadgeColors: Record<string, string> = {
-  workflow: "bg-purple-100 text-purple-700",
-  user_manual: "bg-blue-100 text-blue-700",
-  specifications: "bg-teal-100 text-teal-700",
-  programming_api: "bg-amber-100 text-amber-700",
+  workflow: "bg-purple-100 text-purple-800",
+  user_manual: "bg-sky-50 text-sky-800",
+  specifications: "bg-teal-50 text-teal-800",
+  programming_api: "bg-amber-50 text-amber-800",
 };
 
 function badgeLabel(skill: Skill): string {
@@ -586,7 +586,7 @@ export default function SkillsRegistry() {
               setShowUploadForm(!showUploadForm);
               if (showUploadForm) resetProcessingState();
             }}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-ni-600 text-white text-xs font-medium hover:bg-ni-700 transition-colors"
           >
             {showUploadForm ? (
               <>
@@ -605,7 +605,7 @@ export default function SkillsRegistry() {
 
       {/* Upload Form */}
       {showUploadForm && (
-        <div className="mb-4 p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
+        <div className="mb-4 p-3 bg-white border border-gray-200 rounded shadow-sm">
           <div className="flex flex-col gap-3">
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">
@@ -616,7 +616,7 @@ export default function SkillsRegistry() {
                 placeholder="e.g. PXIe-4135"
                 value={uploadDevice}
                 onChange={(e) => setUploadDevice(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 transition-colors"
+                className="w-full rounded border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-ni-500 transition-colors"
               />
             </div>
             <div>
@@ -630,7 +630,7 @@ export default function SkillsRegistry() {
                     e.target.value as "user_manual" | "specifications" | "programming_api"
                   )
                 }
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 transition-colors bg-white"
+                className="w-full rounded border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-ni-500 transition-colors bg-white"
               >
                 <option value="user_manual">User Manual</option>
                 <option value="specifications">Specifications</option>
@@ -646,7 +646,7 @@ export default function SkillsRegistry() {
                 placeholder="e.g. dcpower"
                 value={uploadCategory}
                 onChange={(e) => setUploadCategory(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 transition-colors"
+                className="w-full rounded border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-ni-500 transition-colors"
               />
               <p className="text-xs text-gray-400 mt-1">
                 Device category groups related devices (e.g. all SMUs belong to "dcpower")
@@ -662,7 +662,7 @@ export default function SkillsRegistry() {
                   placeholder='e.g. C, Python, LabVIEW'
                   value={uploadLanguage}
                   onChange={(e) => setUploadLanguage(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 transition-colors"
+                  className="w-full rounded border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-ni-500 transition-colors"
                 />
               </div>
             )}
@@ -678,7 +678,7 @@ export default function SkillsRegistry() {
                   setUploadFile(e.target.files?.[0] ?? null);
                   resetProcessingState();
                 }}
-                className="w-full text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                className="w-full text-sm text-gray-600 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-ni-50 file:text-ni-700 hover:file:bg-ni-100"
               />
               {isPdf && (
                 <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
@@ -687,12 +687,12 @@ export default function SkillsRegistry() {
                 </p>
               )}
               {showCleanSplitOption && (
-                <label className="flex items-center gap-2 mt-2 text-xs text-blue-700 cursor-pointer">
+                <label className="flex items-center gap-2 mt-2 text-xs text-ni-700 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={wantsCleanSplit}
                     onChange={(e) => setWantsCleanSplit(e.target.checked)}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    className="rounded border-gray-300 text-ni-600 focus:ring-ni-500"
                   />
                   Clean &amp; Split API doc (convert HTML tables, remove TOC index lines, then split with LLM)
                 </label>
@@ -751,7 +751,7 @@ export default function SkillsRegistry() {
                   ) : processingStep === "error" ? (
                     <AlertTriangle size={16} className="text-red-500" />
                   ) : (
-                    <Loader2 size={16} className="animate-spin text-blue-500" />
+                    <Loader2 size={16} className="animate-spin text-ni-600" />
                   )}
                   <span className={
                     processingStep === "done"
@@ -777,7 +777,7 @@ export default function SkillsRegistry() {
                   <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
                     <div
                       className={`h-full rounded-full transition-all duration-300 ${
-                        processingStep === "done" ? "bg-green-500" : "bg-blue-500"
+                        processingStep === "done" ? "bg-green-500" : "bg-ni-600"
                       }`}
                       style={{ width: `${processingPercent}%` }}
                     />
@@ -788,20 +788,20 @@ export default function SkillsRegistry() {
 
             {/* Split preview modal */}
             {processingStep === "split_preview" && splitPreview && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h4 className="text-sm font-semibold text-blue-800 mb-2">
+              <div className="bg-ni-50 border border-ni-200 rounded p-3">
+                <h4 className="text-sm font-semibold text-ni-800 mb-2">
                   Suggested API Doc Split
                 </h4>
-                <p className="text-xs text-blue-600 mb-3">
+                <p className="text-xs text-ni-600 mb-3">
                   The LLM suggests splitting into {splitPreview.splits.length} files:
                 </p>
                 <div className="max-h-48 overflow-y-auto space-y-1.5 mb-3">
                   {splitPreview.splits.map((split, i) => (
                     <div
                       key={i}
-                      className="bg-white rounded-md px-3 py-2 border border-blue-100 text-xs"
+                      className="bg-white rounded px-3 py-2 border border-ni-100 text-xs"
                     >
-                      <span className="font-mono text-blue-700">{split.filename}</span>
+                      <span className="font-mono text-ni-700">{split.filename}</span>
                       <span className="text-gray-500 ml-2">— {split.title}</span>
                       <div className="text-gray-400 mt-0.5">
                         Starts at: {split.start_heading}
@@ -818,7 +818,7 @@ export default function SkillsRegistry() {
                   <button
                     onClick={handleConfirmSplit}
                     disabled={uploading}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed transition-colors"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-ni-600 text-white text-sm font-medium hover:bg-ni-700 disabled:bg-ni-300 disabled:cursor-not-allowed transition-colors"
                   >
                     {uploading ? (
                       <Loader2 size={14} className="animate-spin" />
@@ -847,7 +847,7 @@ export default function SkillsRegistry() {
               <button
                 onClick={handleUpload}
                 disabled={uploading || !uploadFile || !uploadDevice.trim()}
-                className="inline-flex items-center gap-1.5 self-start px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed transition-colors"
+                className="inline-flex items-center gap-1.5 self-start px-4 py-2 rounded bg-ni-600 text-white text-sm font-medium hover:bg-ni-700 disabled:bg-ni-300 disabled:cursor-not-allowed transition-colors"
               >
                 {uploading ? (
                   <Loader2 size={14} className="animate-spin" />
@@ -885,14 +885,14 @@ export default function SkillsRegistry() {
       )}
 
       {!loading && !error && selected.size > 0 && (
-        <div className="mb-3 flex items-center gap-3 bg-red-50 border border-red-200 rounded-lg px-4 py-2">
+        <div className="mb-3 flex items-center gap-3 bg-red-50 border border-red-200 rounded px-3 py-2">
           <span className="text-sm text-red-700 font-medium">
             {selected.size} selected
           </span>
           <button
             onClick={handleBatchDelete}
             disabled={batchDeleting}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-medium hover:bg-red-700 disabled:bg-red-300 disabled:cursor-not-allowed transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-red-600 text-white text-xs font-medium hover:bg-red-700 disabled:bg-red-300 disabled:cursor-not-allowed transition-colors"
           >
             {batchDeleting ? (
               <Loader2 size={13} className="animate-spin" />
@@ -918,7 +918,7 @@ export default function SkillsRegistry() {
                 type="checkbox"
                 checked={allDocSelected}
                 onChange={toggleSelectAll}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                className="rounded border-gray-300 text-ni-600 focus:ring-ni-500"
               />
               Select all doc skills
             </label>
@@ -926,9 +926,9 @@ export default function SkillsRegistry() {
           {skills.map((skill) => (
             <div
               key={skill.name}
-              className={`bg-white border rounded-xl p-4 shadow-sm flex flex-col gap-2 ${
+              className={`bg-white border rounded p-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)] flex flex-col gap-1.5 ${
                 selected.has(skill.name)
-                  ? "border-blue-400 ring-1 ring-blue-200"
+                  ? "border-ni-400 ring-1 ring-ni-200"
                   : "border-gray-200"
               }`}
             >
@@ -939,7 +939,7 @@ export default function SkillsRegistry() {
                       type="checkbox"
                       checked={selected.has(skill.name)}
                       onChange={() => toggleSelect(skill.name)}
-                      className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      className="mt-1 rounded border-gray-300 text-ni-600 focus:ring-ni-500"
                     />
                   )}
                   <div className="flex flex-col gap-0.5 min-w-0">
@@ -960,7 +960,7 @@ export default function SkillsRegistry() {
                   </div>
                 </div>
                 <span
-                  className={`text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${badgeColor(
+                  className={`text-xs font-medium px-2 py-0.5 rounded flex-shrink-0 ${badgeColor(
                     skill
                   )}`}
                 >
@@ -973,7 +973,7 @@ export default function SkillsRegistry() {
               <div className="flex items-center gap-3 mt-1">
                 <button
                   onClick={() => handleViewContent(skill)}
-                  className="inline-flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800 font-medium transition-colors"
+                  className="inline-flex items-center gap-1.5 text-xs text-ni-600 hover:text-ni-800 font-medium transition-colors"
                 >
                   <BookOpen size={13} />
                   View Content
@@ -1017,7 +1017,7 @@ export default function SkillsRegistry() {
                     <button
                       onClick={handleCancelEdit}
                       disabled={saving}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-300 text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded border border-gray-300 text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors"
                     >
                       <X size={13} />
                       Cancel
@@ -1025,7 +1025,7 @@ export default function SkillsRegistry() {
                     <button
                       onClick={handleSaveEdit}
                       disabled={saving}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed transition-colors"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-ni-600 text-white text-xs font-medium hover:bg-ni-700 disabled:bg-ni-300 disabled:cursor-not-allowed transition-colors"
                     >
                       {saving ? (
                         <Loader2 size={13} className="animate-spin" />
@@ -1038,7 +1038,7 @@ export default function SkillsRegistry() {
                 ) : (
                   <button
                     onClick={handleStartEdit}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-ni-600 text-white text-xs font-medium hover:bg-ni-700 transition-colors"
                   >
                     <FileText size={13} />
                     Edit
@@ -1057,7 +1057,7 @@ export default function SkillsRegistry() {
                     value={editDescription}
                     onChange={(e) => setEditDescription(e.target.value)}
                     rows={3}
-                    className="w-full text-sm text-gray-800 bg-gray-50 rounded-lg p-3 border border-gray-200 outline-none focus:border-blue-500 resize-none transition-colors"
+                    className="w-full text-sm text-gray-800 bg-gray-50 rounded p-3 border border-gray-200 outline-none focus:border-ni-500 resize-none transition-colors"
                   />
                 </div>
               )}
@@ -1065,10 +1065,10 @@ export default function SkillsRegistry() {
                 <textarea
                   value={editContent}
                   onChange={(e) => setEditContent(e.target.value)}
-                  className="w-full h-[55vh] font-mono text-xs text-gray-800 leading-relaxed bg-gray-50 rounded-lg p-4 border border-gray-200 outline-none focus:border-blue-500 resize-none transition-colors"
+                  className="w-full h-[55vh] font-mono text-xs text-gray-800 leading-relaxed bg-gray-50 rounded p-4 border border-gray-200 outline-none focus:border-ni-500 resize-none transition-colors"
                 />
               ) : (
-                <article className="max-h-[55vh] overflow-auto bg-gray-50 rounded-lg p-4 border border-gray-200 prose prose-sm max-w-none prose-headings:text-gray-800 prose-p:text-gray-700 prose-strong:text-gray-800 prose-code:text-gray-800 prose-pre:bg-gray-100 prose-pre:text-gray-800 prose-a:text-blue-700">
+                <article className="max-h-[55vh] overflow-auto bg-gray-50 rounded p-4 border border-gray-200 prose prose-sm max-w-none prose-headings:text-gray-800 prose-p:text-gray-700 prose-strong:text-gray-800 prose-code:text-gray-800 prose-pre:bg-gray-100 prose-pre:text-gray-800 prose-a:text-ni-700">
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     components={{

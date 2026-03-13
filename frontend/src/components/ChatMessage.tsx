@@ -36,7 +36,7 @@ export default function ChatMessage({ message }: Props) {
     message.tool_calls.length > 0
   ) {
     return (
-      <div className="max-w-[80%] self-start bg-gray-100 text-gray-900 rounded-[16px_16px_16px_4px] px-4 py-2">
+      <div className="max-w-[80%] self-start bg-gray-100 text-gray-900 rounded px-3 py-2">
         <div className="italic text-gray-500">Agent is using tools...</div>
       </div>
     );
@@ -47,14 +47,14 @@ export default function ChatMessage({ message }: Props) {
 
   if (isUser) {
     return (
-      <div className="self-end bg-blue-600 text-white rounded-[16px_16px_4px_16px] px-4 py-2 max-w-[80%]">
+      <div className="self-end bg-ni-600 text-white rounded px-3 py-2 max-w-[80%]">
         <p className="whitespace-pre-wrap break-words">{content}</p>
       </div>
     );
   }
 
   return (
-    <div className="self-start bg-gray-100 text-gray-900 rounded-[16px_16px_16px_4px] px-4 py-2 max-w-[80%] prose prose-sm max-w-none">
+    <div className="self-start bg-gray-100 text-gray-900 rounded px-3 py-2 max-w-[80%] prose prose-sm max-w-none">
       <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{content}</ReactMarkdown>
     </div>
   );

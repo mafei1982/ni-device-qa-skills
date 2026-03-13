@@ -1,2 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
+
+/* ──────────────────────────────────────────────────────────
+   NI SystemLink Enterprise — Design System Theme
+   ────────────────────────────────────────────────────────── */
+@theme {
+  /* NI Brand Green (primary / accent) */
+  --color-ni-50: #EDF8F2;
+  --color-ni-100: #D4F1E1;
+  --color-ni-200: #A7E2C3;
+  --color-ni-300: #6BC99A;
+  --color-ni-400: #2EAD71;
+  --color-ni-500: #059652;
+  --color-ni-600: #00843D;
+  --color-ni-700: #006B32;
+  --color-ni-800: #005227;
+  --color-ni-900: #003A1C;
+
+  /* Override default sans font → Inter */
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+  /* Industrial compact border-radius (2–4 px) */
+  --radius-xs: 2px;
+  --radius-sm: 2px;
+  --radius: 3px;
+  --radius-md: 3px;
+  --radius-lg: 3px;
+  --radius-xl: 4px;
+  --radius-2xl: 4px;
+  --radius-3xl: 4px;
+}
+
+/* ── Base refinements ── */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+}
+
+/* ── Compact scrollbar ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #C1C7D0; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #97A0AF; }

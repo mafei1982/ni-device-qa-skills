@@ -23,12 +23,12 @@ export default function Modal({ title, onClose, children, wide }: Props) {
       onClick={onClose}
     >
       <div
-        className={`bg-white rounded-xl shadow-2xl w-full ${wide ? "max-w-6xl" : "max-w-2xl"} max-h-[85vh] flex flex-col mx-4`}
+        className={`bg-white rounded shadow-lg w-full ${wide ? "max-w-6xl" : "max-w-2xl"} max-h-[85vh] flex flex-col mx-4 border border-gray-200`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200 flex-shrink-0">
-          <h2 className="text-sm font-semibold text-gray-800">{title}</h2>
+        <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-200 bg-gray-50 flex-shrink-0">
+          <h2 className="text-sm font-semibold text-gray-900">{title}</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-700 transition-colors"

@@ -72,15 +72,15 @@ function SessionItem({
     <li className="group">
       <div
         onClick={() => !editing && onSelect()}
-        className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-start gap-2 cursor-pointer ${
+        className={`w-full text-left px-2.5 py-1.5 rounded text-sm transition-colors flex items-start gap-2 cursor-pointer ${
           isActive
-            ? "bg-blue-50 text-blue-700 border border-blue-200"
+            ? "bg-ni-50 text-ni-700 border border-ni-200"
             : "hover:bg-gray-100 text-gray-700 border border-transparent"
         }`}
       >
         <MessageSquare
           size={14}
-          className={`mt-0.5 flex-shrink-0 ${isActive ? "text-blue-500" : "text-gray-400"}`}
+          className={`mt-0.5 flex-shrink-0 ${isActive ? "text-ni-500" : "text-gray-400"}`}
         />
         <div className="flex-1 min-w-0">
           {editing ? (
@@ -95,7 +95,7 @@ function SessionItem({
                 }}
                 onBlur={commitRename}
                 onClick={(e) => e.stopPropagation()}
-                className="flex-1 min-w-0 px-1 py-0.5 text-sm rounded border border-blue-300 outline-none focus:ring-1 focus:ring-blue-400 bg-white text-gray-900"
+                className="flex-1 min-w-0 px-1 py-0.5 text-sm rounded border border-ni-300 outline-none focus:ring-1 focus:ring-ni-400 bg-white text-gray-900"
               />
               <button
                 onClick={(e) => { e.stopPropagation(); commitRename(); }}
@@ -170,7 +170,7 @@ export default function SessionList({
         <button
           onClick={onNewSession}
           title="New Chat"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-medium hover:bg-green-700 transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-ni-600 text-white text-xs font-medium hover:bg-ni-700 transition-colors"
         >
           <MessageSquarePlus size={13} />
           New Chat

@@ -7,7 +7,7 @@ import StandaloneDocProcessor from "./components/StandaloneDocProcessor";
 export default function App() {
   return (
     <BrowserRouter>
-      <div className="flex flex-col h-screen w-screen overflow-hidden bg-gray-50 text-gray-900">
+        <div className="flex flex-col h-screen w-screen overflow-hidden bg-[#F7F8FA] text-gray-900">
         <NavBar />
         <Routes>
           <Route path="/" element={<Workspace />} />
