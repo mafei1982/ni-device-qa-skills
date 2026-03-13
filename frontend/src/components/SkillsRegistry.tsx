@@ -509,29 +509,33 @@ export default function SkillsRegistry() {
   }
 
   return (
-    <section>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-base font-semibold text-gray-800">
-          Skills Registry
-        </h2>
-        <button
-          onClick={() => {
-            setShowUploadForm(!showUploadForm);
-            if (showUploadForm) resetProcessingState();
-          }}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 transition-colors"
-        >
-          {showUploadForm ? (
-            <>
-              <X size={13} /> Cancel
-            </>
-          ) : (
-            <>
-              <Plus size={13} /> Upload Doc
-            </>
-          )}
-        </button>
+    <section className="h-full min-h-0 flex flex-col">
+      <div className="sticky top-0 z-10 bg-white pb-3 border-b border-gray-100">
+        <div className="flex items-center justify-between pt-1">
+          <h2 className="text-base font-semibold text-gray-800">
+            Skills Registry
+          </h2>
+          <button
+            onClick={() => {
+              setShowUploadForm(!showUploadForm);
+              if (showUploadForm) resetProcessingState();
+            }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 transition-colors"
+          >
+            {showUploadForm ? (
+              <>
+                <X size={13} /> Cancel
+              </>
+            ) : (
+              <>
+                <Plus size={13} /> Upload Doc
+              </>
+            )}
+          </button>
+        </div>
       </div>
+
+      <div className="flex-1 min-h-0 overflow-y-auto pt-4 pr-1">
 
       {/* Upload Form */}
       {showUploadForm && (
@@ -986,6 +990,7 @@ export default function SkillsRegistry() {
           )}
         </Modal>
       )}
+      </div>
     </section>
   );
 }

@@ -23,6 +23,7 @@ export default function Workspace() {
   );
 
   const [modelId, setModelId] = useState("");
+  const [showSkillsRegistry, setShowSkillsRegistry] = useState(true);
 
   // Persist sessions whenever they change
   useEffect(() => {
@@ -95,9 +96,9 @@ export default function Workspace() {
   );
 
   return (
-    <div className="flex flex-1 overflow-hidden">
+    <div className="flex flex-1 flex-col lg:flex-row overflow-hidden bg-gray-50">
       {/* LEFT: Sidebar */}
-      <div className="w-96 flex-shrink-0 border-r border-gray-200 bg-white flex flex-col overflow-y-auto p-4">
+      <div className="w-full lg:w-80 flex-shrink-0 border-b lg:border-b-0 lg:border-r border-gray-200 bg-white flex flex-col overflow-y-auto p-4">
         {/* Model selector */}
         <ModelSelector value={modelId} onChange={setModelId} />
 
@@ -111,21 +112,41 @@ export default function Workspace() {
           onDeleteSession={handleDeleteSession}
         />
 
-        {/* Divider */}
-        <hr className="my-4 border-gray-200" />
-
-        {/* Skills Registry */}
-        <SkillsRegistry />
       </div>
 
-      {/* RIGHT: Chat area */}
-      <div className="flex-1 flex flex-col min-w-0 bg-gray-50">
+      {/* CENTER: Chat area */}
+      <div className="flex-1 flex flex-col min-w-0 relative">
+        {!showSkillsRegistry && (
+          <button
+            onClick={() => setShowSkillsRegistry(true)}
+            className="absolute top-3 right-3 z-10 px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+          >
+            Show Skills
+          </button>
+        )}
         <ChatPanel
           messages={activeSession.messages}
           onMessagesChange={handleMessagesChange}
           modelId={modelId || undefined}
         />
       </div>
+
+      {/* RIGHT: Skills registry */}
+      {showSkillsRegistry && (
+        <aside className="w-full lg:w-[28rem] lg:max-w-[42vw] lg:min-w-[22rem] flex-shrink-0 border-t lg:border-t-0 lg:border-l border-gray-200 bg-white flex flex-col min-h-0">
+          <div className="flex justify-end px-4 pt-3">
+            <button
+              onClick={() => setShowSkillsRegistry(false)}
+              className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+            >
+              Hide Skills
+            </button>
+          </div>
+          <div className="flex-1 min-h-0 p-4 pt-2">
+            <SkillsRegistry />
+          </div>
+        </aside>
+      )}
     </div>
   );
 }
