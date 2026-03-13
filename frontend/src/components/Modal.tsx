@@ -5,9 +5,10 @@ interface Props {
   title: string;
   onClose: () => void;
   children: React.ReactNode;
+  wide?: boolean;
 }
 
-export default function Modal({ title, onClose, children }: Props) {
+export default function Modal({ title, onClose, children, wide }: Props) {
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
@@ -22,7 +23,7 @@ export default function Modal({ title, onClose, children }: Props) {
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col mx-4"
+        className={`bg-white rounded-xl shadow-2xl w-full ${wide ? "max-w-6xl" : "max-w-2xl"} max-h-[85vh] flex flex-col mx-4`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

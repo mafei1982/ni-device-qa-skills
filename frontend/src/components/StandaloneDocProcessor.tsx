@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -79,6 +79,35 @@ export default function StandaloneDocProcessor() {
   const [docModalLoading, setDocModalLoading] = useState(false);
   const [docModalError, setDocModalError] = useState<string | null>(null);
   const [docSaving, setDocSaving] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  const editorRef = useRef<HTMLTextAreaElement>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
+  const syncingRef = useRef<"editor" | "preview" | null>(null);
+
+  const handleEditorScroll = useCallback(() => {
+    if (syncingRef.current === "preview") return;
+    syncingRef.current = "editor";
+    const editor = editorRef.current;
+    const preview = previewRef.current;
+    if (editor && preview) {
+      const ratio = editor.scrollTop / (editor.scrollHeight - editor.clientHeight || 1);
+      preview.scrollTop = ratio * (preview.scrollHeight - preview.clientHeight || 1);
+    }
+    requestAnimationFrame(() => { syncingRef.current = null; });
+  }, []);
+
+  const handlePreviewScroll = useCallback(() => {
+    if (syncingRef.current === "editor") return;
+    syncingRef.current = "preview";
+    const editor = editorRef.current;
+    const preview = previewRef.current;
+    if (editor && preview) {
+      const ratio = preview.scrollTop / (preview.scrollHeight - preview.clientHeight || 1);
+      editor.scrollTop = ratio * (editor.scrollHeight - editor.clientHeight || 1);
+    }
+    requestAnimationFrame(() => { syncingRef.current = null; });
+  }, []);
 
   const selectedTask = useMemo(
     () => tasks.find((t) => t.task_id === selectedTaskId) ?? null,
@@ -380,12 +409,36 @@ export default function StandaloneDocProcessor() {
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-gray-900">Task: {selectedTask.task_id}</h3>
                 {taskStatus === "done" ? (
-                  <a
-                    className="rounded bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white"
-                    href={getStandaloneDownloadUrl(selectedTask.task_id)}
+                  <button
+                    disabled={downloading}
+                    className="inline-flex items-center gap-2 rounded bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-60"
+                    onClick={async () => {
+                      setDownloading(true);
+                      try {
+                        const resp = await fetch(getStandaloneDownloadUrl(selectedTask.task_id));
+                        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                        const blob = await resp.blob();
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = `${selectedTask.task_id}.zip`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                      } catch {
+                        // allow retry on failure
+                      } finally {
+                        setDownloading(false);
+                      }
+                    }}
                   >
-                    Download Result ZIP
-                  </a>
+                    {downloading && (
+                      <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                    )}
+                    {downloading ? "Downloading..." : "Download Result ZIP"}
+                  </button>
                 ) : (
                   <span
                     className="rounded bg-gray-400 px-3 py-1.5 text-xs font-medium text-white cursor-not-allowed"
@@ -654,7 +707,7 @@ export default function StandaloneDocProcessor() {
       </main>
 
       {activeDoc && (
-        <Modal title={`Edit ${activeDoc.filename}`} onClose={closeDocModal}>
+        <Modal title={`Edit ${activeDoc.filename}`} onClose={closeDocModal} wide>
           {docModalLoading ? (
             <p className="text-sm text-gray-600">Loading document...</p>
           ) : (
@@ -704,27 +757,37 @@ export default function StandaloneDocProcessor() {
                 />
               </label>
 
-              <textarea
-                className="h-56 w-full rounded border border-gray-300 p-2 font-mono text-xs"
-                value={activeContent}
-                onChange={(e) => setActiveContent(e.target.value)}
-              />
-
-              <details className="rounded border border-gray-200 bg-gray-50 p-2">
-                <summary className="cursor-pointer text-xs font-semibold text-gray-700">Preview</summary>
-                <div className="prose prose-sm mt-2 max-w-none">
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    components={{
-                      img: ({ src = "", alt = "" }) => (
-                        <img src={normalizeMdImage(selectedTaskId, src)} alt={alt} />
-                      ),
-                    }}
-                  >
-                    {activeContent}
-                  </ReactMarkdown>
+              <div className="flex gap-3 min-h-0" style={{ height: "50vh" }}>
+                <div className="flex-1 flex flex-col min-w-0">
+                  <p className="text-xs font-semibold text-gray-700 mb-1">Editor</p>
+                  <textarea
+                    ref={editorRef}
+                    className="flex-1 w-full rounded border border-gray-300 p-2 font-mono text-xs resize-none"
+                    value={activeContent}
+                    onChange={(e) => setActiveContent(e.target.value)}
+                    onScroll={handleEditorScroll}
+                  />
                 </div>
-              </details>
+                <div className="flex-1 flex flex-col min-w-0">
+                  <p className="text-xs font-semibold text-gray-700 mb-1">Preview</p>
+                  <div
+                    ref={previewRef}
+                    className="flex-1 overflow-y-auto rounded border border-gray-200 bg-gray-50 p-3 prose prose-sm max-w-none"
+                    onScroll={handlePreviewScroll}
+                  >
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        img: ({ src = "", alt = "" }) => (
+                          <img src={normalizeMdImage(selectedTaskId, src)} alt={alt} />
+                        ),
+                      }}
+                    >
+                      {activeContent}
+                    </ReactMarkdown>
+                  </div>
+                </div>
+              </div>
 
               <div className="flex gap-2">
                 <button
