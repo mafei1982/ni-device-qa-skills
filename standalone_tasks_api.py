@@ -9,6 +9,7 @@ from pathlib import Path
 import re
 import shutil
 import tempfile
+import zipfile
 from typing import Any
 from uuid import uuid4
 
@@ -23,6 +24,7 @@ logger = logging.getLogger("ni_device_qa.standalone_tasks")
 router = APIRouter(prefix="/api/standalone", tags=["standalone-tasks"])
 
 DOC_TYPES = {"user_manual", "specifications", "programming_api"}
+MANUAL_LIKE_TYPES = {"user_manual", "specifications"}
 SPLIT_MODES = {"headers", "full"}
 
 TASKS_ROOT = Path(__file__).parent / "storage" / "tasks"
@@ -488,8 +490,6 @@ async def process_task_files(
 
     for item in configs_raw:
         subtype = str(item.get("subtype", "")).strip()
-        if subtype not in DOC_TYPES:
-            raise HTTPException(status_code=400, detail=f"Invalid subtype: {subtype}")
         if subtype == "programming_api":
             lang = _normalize_api_language(str(item.get("language", "")))
             if not lang:
@@ -505,6 +505,8 @@ async def process_task_files(
                     detail=f"Invalid split_mode '{split_mode}'. Use one of {sorted(SPLIT_MODES)}.",
                 )
         else:
+            if not subtype:
+                raise HTTPException(status_code=400, detail="subtype is required.")
             device = _slugify(str(item.get("device", "")))
             if not device:
                 raise HTTPException(
@@ -525,9 +527,10 @@ async def process_task_files(
                 device_raw = str(cfg.get("device", "")).strip()
                 language_raw = str(cfg.get("language", "")).strip()
                 split_mode = str(cfg.get("split_mode", "headers")).strip().lower() or "headers"
+                skip_llm = bool(cfg.get("skip_llm", False))
 
-                if subtype not in DOC_TYPES:
-                    raise RuntimeError(f"File {up.filename}: invalid subtype '{subtype}'.")
+                if not subtype:
+                    raise RuntimeError(f"File {up.filename}: subtype is required.")
 
                 if subtype == "programming_api":
                     device_norm = category
@@ -637,7 +640,7 @@ async def process_task_files(
                     raise RuntimeError(f"File {filename}: produced empty markdown.")
 
                 # 2) Process by subtype.
-                if subtype in {"user_manual", "specifications"}:
+                if subtype != "programming_api":
                     yield _sse(
                         {
                             "type": "status",
@@ -663,23 +666,37 @@ async def process_task_files(
                         }
                     )
 
-                    yield _sse(
-                        {
-                            "type": "status",
-                            "task_id": task_id,
-                            "file_index": idx,
-                            "file_total": total_files,
-                            "filename": filename,
-                            "step": "llm_cleanup",
-                            "message": "Optimizing markdown with LLM...",
-                        }
-                    )
-                    cleaned = await doc_processor.cleanup_md_with_llm(
-                        pre_clean,
-                        os.environ.get("DOC_PROCESS_API_URL", os.environ["LLM_API_URL"]),
-                        os.environ.get("DOC_PROCESS_API_KEY", os.environ["LLM_API_KEY"]),
-                        os.environ.get("DOC_PROCESS_MODEL", "google/gemini-3.1-pro-preview"),
-                    )
+                    if skip_llm:
+                        cleaned = pre_clean
+                        yield _sse(
+                            {
+                                "type": "status",
+                                "task_id": task_id,
+                                "file_index": idx,
+                                "file_total": total_files,
+                                "filename": filename,
+                                "step": "llm_cleanup",
+                                "message": "LLM optimization skipped.",
+                            }
+                        )
+                    else:
+                        yield _sse(
+                            {
+                                "type": "status",
+                                "task_id": task_id,
+                                "file_index": idx,
+                                "file_total": total_files,
+                                "filename": filename,
+                                "step": "llm_cleanup",
+                                "message": "Optimizing markdown with LLM...",
+                            }
+                        )
+                        cleaned = await doc_processor.cleanup_md_with_llm(
+                            pre_clean,
+                            os.environ.get("DOC_PROCESS_API_URL", os.environ["LLM_API_URL"]),
+                            os.environ.get("DOC_PROCESS_API_KEY", os.environ["LLM_API_KEY"]),
+                            os.environ.get("DOC_PROCESS_MODEL", "google/gemini-3.1-pro-preview"),
+                        )
 
                     image_target = _task_path(task_id, "docs", "images")
                     copied = doc_processor.copy_images(images_dir, cleaned, image_target)
@@ -893,8 +910,8 @@ async def update_task_doc_meta(task_id: str, doc_id: str, req: UpdateDocMetaRequ
     category = manifest["category"]
 
     if req.subtype is not None:
-        if req.subtype not in DOC_TYPES:
-            raise HTTPException(status_code=400, detail=f"Invalid subtype: {req.subtype}")
+        if not req.subtype.strip():
+            raise HTTPException(status_code=400, detail="subtype cannot be empty.")
         doc["subtype"] = req.subtype
         skill_entry["subtype"] = req.subtype
         if req.subtype == "programming_api":
@@ -955,18 +972,26 @@ async def get_task_skill_md(task_id: str):
     return {"content": path.read_text(encoding="utf-8")}
 
 
+
 @router.get("/tasks/{task_id}/download")
 async def download_task(task_id: str):
     task_dir = _task_dir(task_id)
     if not task_dir.exists():
         raise HTTPException(status_code=404, detail=f"Task '{task_id}' not found.")
 
+    exclude_dirs = {"raw_uploads", "tmp"}
     temp_zip_dir = Path(tempfile.mkdtemp(prefix="task_zip_"))
-    archive_base = temp_zip_dir / task_id
-    zip_path = shutil.make_archive(str(archive_base), "zip", root_dir=task_dir)
+    zip_path = temp_zip_dir / f"{task_id}.zip"
+    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+        for file_path in sorted(task_dir.rglob("*")):
+            rel = file_path.relative_to(task_dir)
+            if rel.parts and rel.parts[0] in exclude_dirs:
+                continue
+            if file_path.is_file():
+                zf.write(file_path, arcname=str(rel))
 
     return FileResponse(
-        path=zip_path,
+        path=str(zip_path),
         filename=f"{task_id}.zip",
         media_type="application/zip",
     )

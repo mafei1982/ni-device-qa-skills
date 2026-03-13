@@ -393,11 +393,12 @@ export interface StandaloneTaskDetail {
 }
 
 export interface StandaloneProcessConfig {
-  subtype: "user_manual" | "specifications" | "programming_api";
+  subtype: string;
   device?: string;
   language?: string;
   split_mode?: "headers" | "full";
   doc_name?: string;
+  skip_llm?: boolean;
 }
 
 export interface StandaloneProcessEvent {
@@ -530,7 +531,7 @@ export async function updateStandaloneDocMeta(
   docId: string,
   payload: {
     description?: string;
-    subtype?: "user_manual" | "specifications" | "programming_api";
+    subtype?: string;
     device?: string;
     language?: string;
   },
