@@ -278,6 +278,10 @@ def convert_pdf_to_md(
     
     # 1. Split PDF into chunks (<= 100 pages)
     chunks = _split_pdf(pdf_path, output_dir, chunk_size=100)
+
+    # Report initial conversion state before the first chunk starts.
+    if progress_callback:
+        progress_callback(0, len(chunks))
     
     use_gpu = _has_gpu()
     combined_md_content = []
@@ -287,9 +291,6 @@ def convert_pdf_to_md(
     master_images_dir.mkdir(parents=True, exist_ok=True)
     
     for i, chunk_path in enumerate(chunks, 1):
-        if progress_callback:
-            progress_callback(i, len(chunks))
-            
         logger.info("Processing chunk %d of %d: %s", i, len(chunks), chunk_path.name)
         
         # MinerU output folder for this specific chunk
@@ -325,6 +326,10 @@ def convert_pdf_to_md(
 
                 # Reflect all image renames in the combined list
                 combined_md_content[-1] = chunk_md
+
+            if progress_callback:
+                # Report completed chunks so callers can show stable progress.
+                progress_callback(i, len(chunks))
 
         except Exception as e:
             logger.error("Failed processing chunk %d: %s", i, e)

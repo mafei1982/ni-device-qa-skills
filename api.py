@@ -3,6 +3,7 @@ import logging
 import os
 import re
 import tempfile
+import asyncio
 from pathlib import Path
 from typing import Optional
 
@@ -371,9 +372,55 @@ async def process_pdf(
             # Step 1: MinerU conversion
             yield _sse({"type": "status", "step": "converting", "message": "Converting PDF with MinerU...", "percent": 5})
             try:
-                md_file, images_dir = doc_processor.convert_pdf_to_md(
-                    pdf_path, tmp_dir / "mineru_output"
+                progress_queue: asyncio.Queue[dict] = asyncio.Queue()
+                loop = asyncio.get_running_loop()
+
+                def _on_convert_progress(completed_chunks: int, total_chunks: int) -> None:
+                    total = max(total_chunks, 1)
+                    clamped_done = max(0, min(completed_chunks, total))
+                    percent = 5 + int((clamped_done / total) * 25)
+
+                    if clamped_done < total:
+                        current_chunk = clamped_done + 1
+                        message = (
+                            f"Converting PDF with MinerU... "
+                            f"chunk {current_chunk}/{total}"
+                        )
+                    else:
+                        message = (
+                            f"MinerU conversion complete ({total}/{total} chunks)."
+                        )
+
+                    event = {
+                        "type": "status",
+                        "step": "converting",
+                        "message": message,
+                        "percent": percent,
+                    }
+                    loop.call_soon_threadsafe(progress_queue.put_nowait, event)
+
+                convert_task = asyncio.create_task(
+                    asyncio.to_thread(
+                        doc_processor.convert_pdf_to_md,
+                        pdf_path,
+                        tmp_dir / "mineru_output",
+                        _on_convert_progress,
+                    )
                 )
+
+                while True:
+                    if convert_task.done() and progress_queue.empty():
+                        break
+
+                    try:
+                        progress_event = await asyncio.wait_for(
+                            progress_queue.get(), timeout=0.5
+                        )
+                        yield _sse(progress_event)
+                    except asyncio.TimeoutError:
+                        continue
+
+                md_file, images_dir = await convert_task
             except RuntimeError as e:
                 yield _sse({"type": "error", "message": str(e)})
                 return

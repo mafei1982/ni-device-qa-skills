@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import {
   Loader2,
   BookOpen,
@@ -75,6 +77,29 @@ const STEP_LABELS: Record<string, string> = {
   done: "Done!",
 };
 
+const DOC_IMAGE_BASE_URL = `http://${window.location.hostname}:8000`;
+
+function formatElapsed(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+}
+
+function resolveMarkdownUrl(url: string): string {
+  const normalized = url.replace(/\\/g, "/").trim();
+  if (!normalized) return normalized;
+  if (/^(https?:)?\/\//i.test(normalized) || normalized.startsWith("data:")) {
+    return normalized;
+  }
+  if (normalized.startsWith("images/")) {
+    return `${DOC_IMAGE_BASE_URL}/${normalized}`;
+  }
+  if (normalized.startsWith("./images/")) {
+    return `${DOC_IMAGE_BASE_URL}/${normalized.slice(2)}`;
+  }
+  return normalized;
+}
+
 export default function SkillsRegistry() {
   const [skills, setSkills] = useState<Skill[]>([]);
   const [loading, setLoading] = useState(true);
@@ -110,6 +135,8 @@ export default function SkillsRegistry() {
   const [processingStep, setProcessingStep] = useState<ProcessingStep>("idle");
   const [processingMessage, setProcessingMessage] = useState("");
   const [processingPercent, setProcessingPercent] = useState<number | null>(null);
+  const [processingStartedAt, setProcessingStartedAt] = useState<number | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [tokenEstimate, setTokenEstimate] = useState<{
     chars: number;
     tokens: number;
@@ -172,6 +199,27 @@ export default function SkillsRegistry() {
   useEffect(() => {
     fetchSkills();
   }, []);
+
+  useEffect(() => {
+    const isActive =
+      processingStartedAt !== null &&
+      processingStep !== "idle" &&
+      processingStep !== "done" &&
+      processingStep !== "error" &&
+      processingStep !== "split_preview";
+
+    if (!isActive) return;
+
+    const tick = () => {
+      setElapsedSeconds(
+        Math.max(0, Math.floor((Date.now() - processingStartedAt) / 1000))
+      );
+    };
+
+    tick();
+    const timer = window.setInterval(tick, 1000);
+    return () => window.clearInterval(timer);
+  }, [processingStartedAt, processingStep]);
 
   async function handleViewContent(skill: Skill) {
     setModalSkill(skill);
@@ -248,6 +296,8 @@ export default function SkillsRegistry() {
     setProcessingStep("idle");
     setProcessingMessage("");
     setProcessingPercent(null);
+    setProcessingStartedAt(null);
+    setElapsedSeconds(0);
     setTokenEstimate(null);
     setSplitPreview(null);
     setWantsCleanSplit(false);
@@ -302,6 +352,7 @@ export default function SkillsRegistry() {
     setUploadError(null);
     resetProcessingState();
     setProcessingStep("converting");
+    setProcessingStartedAt(Date.now());
 
     try {
       await processPdfSkill(
@@ -374,6 +425,7 @@ export default function SkillsRegistry() {
     setUploadError(null);
     resetProcessingState();
     setProcessingStep("cleaning");
+    setProcessingStartedAt(Date.now());
 
     try {
       await processMdSkill(
@@ -445,6 +497,8 @@ export default function SkillsRegistry() {
     if (!splitPreview) return;
     setProcessingStep("splitting");
     setUploading(true);
+    setProcessingStartedAt(Date.now());
+    setElapsedSeconds(0);
     try {
       await splitApiDoc(
         splitPreview.sourceSkill,
@@ -711,6 +765,11 @@ export default function SkillsRegistry() {
                   {processingPercent !== null && processingStep !== "error" && (
                     <span className="ml-auto text-xs font-medium text-gray-500 tabular-nums">
                       {processingPercent}%
+                    </span>
+                  )}
+                  {processingStep !== "done" && processingStep !== "error" && (
+                    <span className="text-xs font-medium text-gray-500 tabular-nums">
+                      {formatElapsed(elapsedSeconds)}
                     </span>
                   )}
                 </div>
@@ -1009,9 +1068,39 @@ export default function SkillsRegistry() {
                   className="w-full h-[55vh] font-mono text-xs text-gray-800 leading-relaxed bg-gray-50 rounded-lg p-4 border border-gray-200 outline-none focus:border-blue-500 resize-none transition-colors"
                 />
               ) : (
-                <pre className="whitespace-pre-wrap break-words font-mono text-xs text-gray-800 leading-relaxed bg-gray-50 rounded-lg p-4 border border-gray-200">
-                  {modalContent}
-                </pre>
+                <article className="max-h-[55vh] overflow-auto bg-gray-50 rounded-lg p-4 border border-gray-200 prose prose-sm max-w-none prose-headings:text-gray-800 prose-p:text-gray-700 prose-strong:text-gray-800 prose-code:text-gray-800 prose-pre:bg-gray-100 prose-pre:text-gray-800 prose-a:text-blue-700">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      a: ({ href, children, ...props }) => {
+                        const safeHref = href ? resolveMarkdownUrl(href) : undefined;
+                        return (
+                          <a
+                            {...props}
+                            href={safeHref}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {children}
+                          </a>
+                        );
+                      },
+                      img: ({ src, alt, ...props }) => {
+                        const safeSrc = src ? resolveMarkdownUrl(src) : "";
+                        return (
+                          <img
+                            {...props}
+                            src={safeSrc}
+                            alt={alt || "skill image"}
+                            loading="lazy"
+                          />
+                        );
+                      },
+                    }}
+                  >
+                    {modalContent}
+                  </ReactMarkdown>
+                </article>
               )}
             </>
           )}
