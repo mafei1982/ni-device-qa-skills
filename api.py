@@ -19,6 +19,7 @@ from openai import AsyncOpenAI
 from pydantic import BaseModel
 
 import doc_processor
+from standalone_tasks_api import router as standalone_tasks_router
 
 logger = logging.getLogger("ni_device_qa")
 logging.basicConfig(
@@ -29,6 +30,7 @@ logging.basicConfig(
 load_dotenv()
 
 app = FastAPI()
+app.include_router(standalone_tasks_router)
 
 app.add_middleware(
     CORSMiddleware,

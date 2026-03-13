@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import NavBar from "./components/NavBar";
 import Workspace from "./components/Workspace";
 import IntroPage from "./components/IntroPage";
+import StandaloneDocProcessor from "./components/StandaloneDocProcessor";
 
 export default function App() {
   return (
@@ -11,6 +12,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Workspace />} />
           <Route path="/intro" element={<IntroPage />} />
+          <Route path="/doc-processor" element={<StandaloneDocProcessor />} />
         </Routes>
       </div>
     </BrowserRouter>

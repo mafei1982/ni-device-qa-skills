@@ -24,6 +24,12 @@ export default function NavBar() {
       >
         Introduction
       </NavLink>
+      <NavLink
+        to="/doc-processor"
+        className={({ isActive }) => (isActive ? active : inactive)}
+      >
+        Doc Processor
+      </NavLink>
     </nav>
   );
 }
