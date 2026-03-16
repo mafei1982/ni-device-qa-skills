@@ -24,6 +24,7 @@ import Modal from "./Modal";
 type UploadRow = {
   file: File;
   docName: string;
+  docNameEdited: boolean;
   subtype: "user_manual" | "specifications" | "programming_api" | "custom";
   customSubtype: string;
   device: string;
@@ -32,8 +33,18 @@ type UploadRow = {
   skip_llm: boolean;
 };
 
-function defaultDocName(filename: string): string {
-  return filename.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_|_$/g, "").toLowerCase();
+function slugify(value: string): string {
+  return value.replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_|_$/g, "").toLowerCase();
+}
+
+function computeDocName(device: string, subtype: string, language: string): string {
+  const dev = slugify(device);
+  const sub = slugify(subtype);
+  if (subtype === "programming_api" && language) {
+    const lang = slugify(language);
+    return [dev, sub, lang].filter(Boolean).join("_");
+  }
+  return [dev, sub].filter(Boolean).join("_");
 }
 
 function normalizeMdImage(taskId: string, src: string): string {
@@ -148,6 +159,21 @@ export default function StandaloneDocProcessor() {
     [tasks, selectedTaskId],
   );
 
+  const duplicateDocNames = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const row of rows) {
+      const name = row.docName.trim().toLowerCase();
+      if (name) counts.set(name, (counts.get(name) || 0) + 1);
+    }
+    const dupes = new Set<string>();
+    for (const [name, count] of counts) {
+      if (count > 1) dupes.add(name);
+    }
+    return dupes;
+  }, [rows]);
+
+  const hasDuplicateDocNames = duplicateDocNames.size > 0;
+
   async function refreshTasks() {
     setTasksLoading(true);
     try {
@@ -215,12 +241,15 @@ export default function StandaloneDocProcessor() {
 
   function handleFileSelect(files: FileList | null) {
     if (!files || files.length === 0) return;
+    const defaultDevice = selectedTask?.category || "";
+    const defaultSubtype = "user_manual";
     const newRows: UploadRow[] = Array.from(files).map((file) => ({
       file,
-      docName: defaultDocName(file.name),
-      subtype: "user_manual",
+      docName: computeDocName(defaultDevice, defaultSubtype, ""),
+      docNameEdited: false,
+      subtype: defaultSubtype,
       customSubtype: "",
-      device: selectedTask?.category || "",
+      device: defaultDevice,
       language: "",
       split_mode: "headers",
       skip_llm: false,
@@ -234,7 +263,16 @@ export default function StandaloneDocProcessor() {
   }
 
   function updateRow(index: number, patch: Partial<UploadRow>) {
-    setRows((prev) => prev.map((row, i) => (i === index ? { ...row, ...patch } : row)));
+    setRows((prev) => prev.map((row, i) => {
+      if (i !== index) return row;
+      const updated = { ...row, ...patch };
+      // Auto-recompute doc name if user hasn't manually edited it
+      if (!updated.docNameEdited && !('docName' in patch)) {
+        const effectiveSub = updated.subtype === "custom" ? updated.customSubtype.trim() : updated.subtype;
+        updated.docName = computeDocName(updated.device, effectiveSub, updated.language);
+      }
+      return updated;
+    }));
   }
 
   async function handleProcessBatch() {
@@ -532,12 +570,19 @@ export default function StandaloneDocProcessor() {
                           <td className="border border-gray-200 px-2 py-1 max-w-[140px] truncate" title={row.file.name}>{row.file.name}</td>
                           <td className="border border-gray-200 px-2 py-1">
                             <input
-                              className="w-full rounded border border-gray-300 px-2 py-1 disabled:bg-gray-100 disabled:text-gray-500"
+                              className={`w-full rounded border px-2 py-1 disabled:bg-gray-100 disabled:text-gray-500 ${
+                                duplicateDocNames.has(row.docName.trim().toLowerCase())
+                                  ? "border-red-500 bg-red-50"
+                                  : "border-gray-300"
+                              }`}
                               value={row.docName}
-                              onChange={(e) => updateRow(i, { docName: e.target.value })}
+                              onChange={(e) => updateRow(i, { docName: e.target.value, docNameEdited: true })}
                               placeholder="doc_name"
                               disabled={processLoading}
                             />
+                            {duplicateDocNames.has(row.docName.trim().toLowerCase()) && (
+                              <p className="text-[10px] text-red-600 mt-0.5">Duplicate name</p>
+                            )}
                           </td>
                           <td className="border border-gray-200 px-2 py-1">
                             <select
@@ -650,7 +695,7 @@ export default function StandaloneDocProcessor() {
               <div className="mt-3 flex gap-2">
                 <button
                   onClick={handleProcessBatch}
-                  disabled={processLoading || rows.length === 0 || taskLoading}
+                  disabled={processLoading || rows.length === 0 || taskLoading || hasDuplicateDocNames}
                   className="inline-flex items-center gap-2 rounded bg-ni-600 px-3 py-2 text-xs font-medium text-white disabled:opacity-60"
                 >
                   {processLoading && (
@@ -661,6 +706,9 @@ export default function StandaloneDocProcessor() {
                   )}
                   {processLoading ? "Processing..." : "Start Processing"}
                 </button>
+                {hasDuplicateDocNames && (
+                  <span className="self-center text-xs text-red-600">Duplicate doc names found. Each name must be unique.</span>
+                )}
                 <button
                   onClick={() => setRows([])}
                   disabled={processLoading || rows.length === 0}
