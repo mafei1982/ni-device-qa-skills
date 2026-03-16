@@ -529,6 +529,14 @@ async def delete_task(task_id: str):
     return {"deleted": task_id}
 
 
+@router.post("/tasks/{task_id}/stop")
+async def stop_task(task_id: str):
+    manifest = _load_manifest(task_id)
+    manifest["status"] = "stopped"
+    _save_manifest(task_id, manifest)
+    return {"stopped": task_id}
+
+
 @router.post("/tasks/{task_id}/process")
 async def process_task_files(
     task_id: str,

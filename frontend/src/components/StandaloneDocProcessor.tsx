@@ -11,6 +11,7 @@ import {
   getStandaloneTaskImageUrl,
   listStandaloneTasks,
   processStandaloneTaskFiles,
+  stopStandaloneTask,
   updateStandaloneDocContent,
   updateStandaloneDocMeta,
   updateStandaloneSkillMd,
@@ -62,6 +63,39 @@ function normalizeMdImage(taskId: string, src: string): string {
   return clean;
 }
 
+type ProcessJobStatus = "pending" | "processing" | "done" | "error" | "stopped";
+
+type ProcessJob = {
+  id: string;
+  taskId: string;
+  category: string;
+  files: File[];
+  configs: StandaloneProcessConfig[];
+  status: ProcessJobStatus;
+  log: string[];
+  abortController: AbortController | null;
+};
+
+function getJobCardClasses(status: ProcessJobStatus): string {
+  switch (status) {
+    case "pending": return "border-amber-300 bg-amber-50";
+    case "processing": return "border-blue-300 bg-blue-50";
+    case "done": return "border-green-300 bg-green-50";
+    case "error": return "border-red-300 bg-red-50";
+    case "stopped": return "border-gray-300 bg-gray-100";
+  }
+}
+
+function getStatusBadgeClasses(status: ProcessJobStatus): string {
+  switch (status) {
+    case "pending": return "bg-amber-100 text-amber-800";
+    case "processing": return "bg-blue-100 text-blue-800";
+    case "done": return "bg-green-100 text-green-800";
+    case "error": return "bg-red-100 text-red-800";
+    case "stopped": return "bg-gray-200 text-gray-700";
+  }
+}
+
 export default function StandaloneDocProcessor() {
   const [tasks, setTasks] = useState<StandaloneTaskSummary[]>([]);
   const [tasksLoading, setTasksLoading] = useState(false);
@@ -78,8 +112,9 @@ export default function StandaloneDocProcessor() {
   const [taskError, setTaskError] = useState<string | null>(null);
 
   const [rows, setRows] = useState<UploadRow[]>([]);
-  const [processLoading, setProcessLoading] = useState(false);
-  const [processLog, setProcessLog] = useState<string[]>([]);
+  const [jobQueue, setJobQueue] = useState<ProcessJob[]>([]);
+  const runningJobRef = useRef<string | null>(null);
+  const selectedTaskIdRef = useRef(selectedTaskId);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [activeDoc, setActiveDoc] = useState<StandaloneDocRecord | null>(null);
@@ -211,6 +246,19 @@ export default function StandaloneDocProcessor() {
     refreshTaskDetail(selectedTaskId);
   }, [selectedTaskId]);
 
+  useEffect(() => {
+    selectedTaskIdRef.current = selectedTaskId;
+  }, [selectedTaskId]);
+
+  // Queue runner: start the next pending job when no job is running
+  useEffect(() => {
+    if (runningJobRef.current) return;
+    const nextJob = jobQueue.find((j) => j.status === "pending");
+    if (!nextJob) return;
+    runningJobRef.current = nextJob.id;
+    runJob(nextJob);
+  }, [jobQueue]);
+
   async function handleCreateTask() {
     if (!category.trim()) return;
     setCreateLoading(true);
@@ -275,28 +323,39 @@ export default function StandaloneDocProcessor() {
     }));
   }
 
-  async function handleProcessBatch() {
+  function handleAddToQueue() {
     if (!selectedTaskId || rows.length === 0) return;
 
+    const validationErrors: string[] = [];
     for (const row of rows) {
       if (row.subtype === "custom" && !row.customSubtype.trim()) {
-        setProcessLog((prev) => [...prev, `Error: ${row.file.name} requires a custom type name.`]);
-        return;
+        validationErrors.push(`${row.file.name} requires a custom type name.`);
       }
       const effectiveSubtype = row.subtype === "custom" ? row.customSubtype.trim() : row.subtype;
       if (effectiveSubtype !== "programming_api" && !row.device.trim()) {
-        setProcessLog((prev) => [...prev, `Error: ${row.file.name} requires a device for ${effectiveSubtype}.`]);
-        return;
+        validationErrors.push(`${row.file.name} requires a device for ${effectiveSubtype}.`);
       }
       if (effectiveSubtype === "programming_api" && !row.language) {
-        setProcessLog((prev) => [...prev, `Error: ${row.file.name} requires API language.`]);
-        return;
+        validationErrors.push(`${row.file.name} requires API language.`);
       }
     }
-
-    setProcessLoading(true);
-    setProcessLog([]);
-    setTaskStatus("processing");
+    if (validationErrors.length > 0) {
+      const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      setJobQueue((prev) => [
+        ...prev,
+        {
+          id: jobId,
+          taskId: selectedTaskId,
+          category: selectedTask?.category || "",
+          files: [],
+          configs: [],
+          status: "error",
+          log: validationErrors.map((e) => `Error: ${e}`),
+          abortController: null,
+        },
+      ]);
+      return;
+    }
 
     const files = rows.map((r) => r.file);
     const cfg: StandaloneProcessConfig[] = rows.map((r) => {
@@ -311,48 +370,145 @@ export default function StandaloneDocProcessor() {
       };
     });
 
+    const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    setJobQueue((prev) => [
+      ...prev,
+      {
+        id: jobId,
+        taskId: selectedTaskId,
+        category: selectedTask?.category || "",
+        files,
+        configs: cfg,
+        status: "pending",
+        log: [`Queued ${files.length} file(s) for task ${selectedTaskId}.`],
+        abortController: null,
+      },
+    ]);
+    setRows([]);
+  }
+
+  async function runJob(job: ProcessJob) {
+    const controller = new AbortController();
+
+    setJobQueue((prev) =>
+      prev.map((j) =>
+        j.id === job.id
+          ? { ...j, status: "processing" as const, abortController: controller }
+          : j,
+      ),
+    );
+
     try {
       await processStandaloneTaskFiles(
-        selectedTaskId,
-        files,
-        cfg,
+        job.taskId,
+        job.files,
+        job.configs,
         (event: StandaloneProcessEvent) => {
-          if (event.type === "status") {
-            setProcessLog((prev) => [
-              ...prev,
-              `[${event.file_index ?? "?"}/${event.file_total ?? "?"}] ${event.filename ?? ""} - ${event.message ?? event.step ?? ""}`,
-            ]);
-          }
-          if (event.type === "token_estimate") {
-            setProcessLog((prev) => [
-              ...prev,
-              `[${event.file_index ?? "?"}] token estimate: ${event.estimated_tokens ?? 0} (${event.chars ?? 0} chars)`,
-            ]);
-          }
-          if (event.type === "file_done") {
-            setProcessLog((prev) => [...prev, `${event.filename ?? "file"} completed.`]);
-          }
-          if (event.type === "error") {
-            setProcessLog((prev) => [...prev, `Error: ${event.message ?? "processing failed"}`]);
-            setTaskStatus("error");
-          }
-          if (event.type === "done") {
-            setProcessLog((prev) => [...prev, "Batch processing completed."]);
-            setTaskStatus("done");
-          }
+          setJobQueue((prev) =>
+            prev.map((j) => {
+              if (j.id !== job.id) return j;
+              let logLine = "";
+              if (event.type === "status") {
+                logLine = `[${event.file_index ?? "?"}/${event.file_total ?? "?"}] ${event.filename ?? ""} - ${event.message ?? event.step ?? ""}`;
+              } else if (event.type === "token_estimate") {
+                logLine = `[${event.file_index ?? "?"}] token estimate: ${event.estimated_tokens ?? 0} (${event.chars ?? 0} chars)`;
+              } else if (event.type === "file_done") {
+                logLine = `${event.filename ?? "file"} completed.`;
+              } else if (event.type === "error") {
+                logLine = `Error: ${event.message ?? "processing failed"}`;
+              } else if (event.type === "done") {
+                logLine = "Batch processing completed.";
+              }
+              const newStatus =
+                event.type === "done"
+                  ? ("done" as const)
+                  : event.type === "error"
+                    ? ("error" as const)
+                    : j.status;
+              return {
+                ...j,
+                status: newStatus,
+                log: logLine ? [...j.log, logLine] : j.log,
+              };
+            }),
+          );
         },
+        controller.signal,
       );
-      setRows([]);
-      await refreshTasks();
-      await refreshTaskDetail(selectedTaskId);
+
+      // Ensure status is "done" if SSE ended without explicit done event
+      setJobQueue((prev) =>
+        prev.map((j) =>
+          j.id === job.id && j.status === "processing"
+            ? { ...j, status: "done" as const }
+            : j,
+        ),
+      );
     } catch (err) {
-      setProcessLog((prev) => [
-        ...prev,
-        err instanceof Error ? err.message : "Batch process failed.",
-      ]);
+      if (controller.signal.aborted) {
+        setJobQueue((prev) =>
+          prev.map((j) =>
+            j.id === job.id
+              ? {
+                  ...j,
+                  status: "stopped" as const,
+                  log: [...j.log, "Processing stopped by user."],
+                  abortController: null,
+                }
+              : j,
+          ),
+        );
+        try {
+          await stopStandaloneTask(job.taskId);
+        } catch {
+          // best-effort backend status reset
+        }
+      } else {
+        setJobQueue((prev) =>
+          prev.map((j) =>
+            j.id === job.id
+              ? {
+                  ...j,
+                  status: "error" as const,
+                  log: [
+                    ...j.log,
+                    err instanceof Error ? err.message : "Processing failed.",
+                  ],
+                }
+              : j,
+          ),
+        );
+      }
     } finally {
-      setProcessLoading(false);
+      runningJobRef.current = null;
+      await refreshTasks();
+      if (selectedTaskIdRef.current === job.taskId) {
+        await refreshTaskDetail(job.taskId);
+      }
     }
+  }
+
+  function handleStopJob(jobId: string) {
+    setJobQueue((prev) =>
+      prev.map((j) => {
+        if (j.id !== jobId) return j;
+        if (j.status === "pending") {
+          return {
+            ...j,
+            status: "stopped" as const,
+            log: [...j.log, "Cancelled before processing."],
+          };
+        }
+        if (j.status === "processing" && j.abortController) {
+          j.abortController.abort();
+        }
+        return j;
+      }),
+    );
+  }
+
+  function handleRemoveJob(jobId: string) {
+    setJobQueue((prev) => prev.filter((j) => j.id !== jobId));
   }
 
   async function openDoc(doc: StandaloneDocRecord) {
@@ -543,7 +699,6 @@ export default function StandaloneDocProcessor() {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                disabled={processLoading}
                 className="mt-3 inline-flex items-center gap-1.5 rounded border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-60"
               >
                 + Add Files
@@ -578,7 +733,6 @@ export default function StandaloneDocProcessor() {
                               value={row.docName}
                               onChange={(e) => updateRow(i, { docName: e.target.value, docNameEdited: true })}
                               placeholder="doc_name"
-                              disabled={processLoading}
                             />
                             {duplicateDocNames.has(row.docName.trim().toLowerCase()) && (
                               <p className="text-[10px] text-red-600 mt-0.5">Duplicate name</p>
@@ -596,7 +750,6 @@ export default function StandaloneDocProcessor() {
                                   customSubtype: val === "custom" ? row.customSubtype : "",
                                 });
                               }}
-                              disabled={processLoading}
                             >
                               <option value="user_manual">user_manual</option>
                               <option value="specifications">specifications</option>
@@ -605,22 +758,20 @@ export default function StandaloneDocProcessor() {
                             </select>
                             {row.subtype === "custom" && (
                               <input
-                                className="mt-1 w-full rounded border border-gray-300 px-2 py-1 disabled:bg-gray-100 disabled:text-gray-500"
+                                className="mt-1 w-full rounded border border-gray-300 px-2 py-1"
                                 value={row.customSubtype}
                                 onChange={(e) => updateRow(i, { customSubtype: e.target.value })}
                                 placeholder="custom type name"
-                                disabled={processLoading}
                               />
                             )}
                           </td>
                           <td className="border border-gray-200 px-2 py-1">
                             {(row.subtype === "custom" ? row.customSubtype.trim() : row.subtype) !== "programming_api" ? (
                               <input
-                                className="w-full rounded border border-gray-300 px-2 py-1 disabled:bg-gray-100 disabled:text-gray-500"
+                                className="w-full rounded border border-gray-300 px-2 py-1"
                                 value={row.device}
                                 onChange={(e) => updateRow(i, { device: e.target.value })}
                                 placeholder="e.g. pxie_4135"
-                                disabled={processLoading}
                               />
                             ) : (
                               <span className="text-gray-400">N/A</span>
@@ -629,13 +780,12 @@ export default function StandaloneDocProcessor() {
                           <td className="border border-gray-200 px-2 py-1">
                             {(row.subtype === "custom" ? row.customSubtype.trim() : row.subtype) === "programming_api" ? (
                               <input
-                                className="w-full rounded border border-gray-300 px-2 py-1 disabled:bg-gray-100 disabled:text-gray-500"
+                                className="w-full rounded border border-gray-300 px-2 py-1"
                                 value={row.language}
                                 onChange={(e) =>
                                   updateRow(i, { language: e.target.value })
                                 }
                                 placeholder="e.g. c, python, c#"
-                                disabled={processLoading}
                               />
                             ) : (
                               <span className="text-gray-400">N/A</span>
@@ -645,12 +795,11 @@ export default function StandaloneDocProcessor() {
                             {(row.subtype === "custom" ? row.customSubtype.trim() : row.subtype) === "programming_api" ? (
                               <div className="flex items-center gap-1">
                                 <select
-                                  className="rounded border border-gray-300 px-2 py-1 disabled:bg-gray-100 disabled:text-gray-500"
+                                  className="rounded border border-gray-300 px-2 py-1"
                                   value={row.split_mode}
                                   onChange={(e) =>
                                     updateRow(i, { split_mode: e.target.value as UploadRow["split_mode"] })
                                   }
-                                  disabled={processLoading}
                                 >
                                   <option value="headers">headers</option>
                                   <option value="full">full</option>
@@ -669,8 +818,7 @@ export default function StandaloneDocProcessor() {
                                 type="checkbox"
                                 checked={!row.skip_llm}
                                 onChange={(e) => updateRow(i, { skip_llm: !e.target.checked })}
-                                disabled={processLoading}
-                                className="h-3.5 w-3.5 rounded border-gray-300 disabled:opacity-50"
+                                className="h-3.5 w-3.5 rounded border-gray-300"
                               />
                               <span className="text-[10px] text-gray-600">{row.skip_llm ? "Off" : "On"}</span>
                             </label>
@@ -678,9 +826,8 @@ export default function StandaloneDocProcessor() {
                           <td className="border border-gray-200 px-2 py-1">
                             <button
                               onClick={() => removeRow(i)}
-                              className="text-red-500 hover:text-red-700 text-xs disabled:opacity-40"
+                              className="text-red-500 hover:text-red-700 text-xs"
                               title="Remove file"
-                              disabled={processLoading}
                             >
                               ✕
                             </button>
@@ -694,38 +841,101 @@ export default function StandaloneDocProcessor() {
 
               <div className="mt-3 flex gap-2">
                 <button
-                  onClick={handleProcessBatch}
-                  disabled={processLoading || rows.length === 0 || taskLoading || hasDuplicateDocNames}
+                  onClick={handleAddToQueue}
+                  disabled={rows.length === 0 || taskLoading || hasDuplicateDocNames}
                   className="inline-flex items-center gap-2 rounded bg-ni-600 px-3 py-2 text-xs font-medium text-white disabled:opacity-60"
                 >
-                  {processLoading && (
-                    <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                  )}
-                  {processLoading ? "Processing..." : "Start Processing"}
+                  {jobQueue.some((j) => j.status === "processing")
+                    ? "Add to Queue"
+                    : "Start Processing"}
                 </button>
                 {hasDuplicateDocNames && (
                   <span className="self-center text-xs text-red-600">Duplicate doc names found. Each name must be unique.</span>
                 )}
                 <button
                   onClick={() => setRows([])}
-                  disabled={processLoading || rows.length === 0}
+                  disabled={rows.length === 0}
                   className="rounded border border-gray-300 px-3 py-2 text-xs text-gray-700 disabled:opacity-60"
                 >
                   Clear Selection
                 </button>
               </div>
+            </section>
 
-              {processLog.length > 0 && (
-                <div className="mt-3 max-h-44 overflow-y-auto rounded border border-gray-200 bg-gray-50 p-2 font-mono text-[11px] text-gray-700">
-                  {processLog.map((line, i) => (
-                    <div key={`${line}-${i}`}>{line}</div>
+            {jobQueue.length > 0 && (
+              <section className="rounded border border-gray-200 bg-white p-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-gray-900">Processing Queue</h3>
+                  {jobQueue.some((j) => j.status === "done" || j.status === "error" || j.status === "stopped") && (
+                    <button
+                      onClick={() =>
+                        setJobQueue((prev) =>
+                          prev.filter((j) => j.status === "pending" || j.status === "processing"),
+                        )
+                      }
+                      className="text-[11px] text-gray-500 hover:text-gray-700"
+                    >
+                      Clear finished
+                    </button>
+                  )}
+                </div>
+                <div className="mt-2 space-y-2">
+                  {jobQueue.map((job) => (
+                    <div
+                      key={job.id}
+                      className={`rounded border p-3 ${getJobCardClasses(job.status)}`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          {job.status === "processing" && (
+                            <svg className="h-3.5 w-3.5 animate-spin text-blue-600" viewBox="0 0 24 24" fill="none">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                            </svg>
+                          )}
+                          <span className="text-xs font-semibold text-gray-900">
+                            {job.category}
+                          </span>
+                          <span className="text-[11px] text-gray-600">
+                            {job.files.length} file(s)
+                          </span>
+                          <span
+                            className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${getStatusBadgeClasses(job.status)}`}
+                          >
+                            {job.status}
+                          </span>
+                        </div>
+                        <div className="flex gap-1">
+                          {(job.status === "pending" || job.status === "processing") && (
+                            <button
+                              onClick={() => handleStopJob(job.id)}
+                              className="rounded border border-red-300 bg-white px-2 py-1 text-[11px] font-medium text-red-700 hover:bg-red-50"
+                            >
+                              Stop
+                            </button>
+                          )}
+                          {(job.status === "done" || job.status === "error" || job.status === "stopped") && (
+                            <button
+                              onClick={() => handleRemoveJob(job.id)}
+                              className="rounded border border-gray-300 bg-white px-2 py-1 text-[11px] text-gray-600 hover:bg-gray-50"
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      {job.log.length > 0 && (
+                        <div className="mt-2 max-h-32 overflow-y-auto rounded border border-gray-200 bg-white/60 p-1.5 font-mono text-[11px] text-gray-700">
+                          {job.log.map((line, i) => (
+                            <div key={i}>{line}</div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   ))}
                 </div>
-              )}
-            </section>
+              </section>
+            )}
 
             <section className="rounded border border-gray-200 bg-white p-4">
               <h3 className="text-sm font-semibold text-gray-900">Processed Docs</h3>

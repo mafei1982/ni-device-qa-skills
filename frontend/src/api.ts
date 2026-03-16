@@ -449,6 +449,15 @@ export async function deleteStandaloneTask(
   return res.data;
 }
 
+export async function stopStandaloneTask(
+  taskId: string,
+): Promise<{ stopped: string }> {
+  const res = await axios.post<{ stopped: string }>(
+    `${BASE_URL}/api/standalone/tasks/${encodeURIComponent(taskId)}/stop`,
+  );
+  return res.data;
+}
+
 export async function processStandaloneTaskFiles(
   taskId: string,
   files: File[],
