@@ -209,6 +209,11 @@ export default function StandaloneDocProcessor() {
 
   const hasDuplicateDocNames = duplicateDocNames.size > 0;
 
+  const isSelectedTaskProcessing = useMemo(
+    () => jobQueue.some((j) => j.taskId === selectedTaskId && (j.status === "processing" || j.status === "pending")),
+    [jobQueue, selectedTaskId],
+  );
+
   async function refreshTasks() {
     setTasksLoading(true);
     try {
@@ -699,10 +704,14 @@ export default function StandaloneDocProcessor() {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
+                disabled={isSelectedTaskProcessing}
                 className="mt-3 inline-flex items-center gap-1.5 rounded border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-60"
               >
                 + Add Files
               </button>
+              {isSelectedTaskProcessing && (
+                <p className="mt-1 text-[11px] text-amber-600">Upload disabled while task is processing.</p>
+              )}
 
               {rows.length > 0 && (
                 <div className="mt-3 overflow-x-auto">
@@ -842,10 +851,10 @@ export default function StandaloneDocProcessor() {
               <div className="mt-3 flex gap-2">
                 <button
                   onClick={handleAddToQueue}
-                  disabled={rows.length === 0 || taskLoading || hasDuplicateDocNames}
+                  disabled={rows.length === 0 || taskLoading || hasDuplicateDocNames || isSelectedTaskProcessing}
                   className="inline-flex items-center gap-2 rounded bg-ni-600 px-3 py-2 text-xs font-medium text-white disabled:opacity-60"
                 >
-                  {jobQueue.some((j) => j.status === "processing")
+                  {jobQueue.some((j) => j.status === "processing" || j.status === "pending")
                     ? "Add to Queue"
                     : "Start Processing"}
                 </button>
@@ -862,15 +871,15 @@ export default function StandaloneDocProcessor() {
               </div>
             </section>
 
-            {jobQueue.length > 0 && (
+            {jobQueue.filter((j) => j.taskId === selectedTaskId).length > 0 && (
               <section className="rounded border border-gray-200 bg-white p-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-semibold text-gray-900">Processing Queue</h3>
-                  {jobQueue.some((j) => j.status === "done" || j.status === "error" || j.status === "stopped") && (
+                  {jobQueue.some((j) => j.taskId === selectedTaskId && (j.status === "done" || j.status === "error" || j.status === "stopped")) && (
                     <button
                       onClick={() =>
                         setJobQueue((prev) =>
-                          prev.filter((j) => j.status === "pending" || j.status === "processing"),
+                          prev.filter((j) => j.taskId !== selectedTaskId || j.status === "pending" || j.status === "processing"),
                         )
                       }
                       className="text-[11px] text-gray-500 hover:text-gray-700"
@@ -880,7 +889,7 @@ export default function StandaloneDocProcessor() {
                   )}
                 </div>
                 <div className="mt-2 space-y-2">
-                  {jobQueue.map((job) => (
+                  {jobQueue.filter((j) => j.taskId === selectedTaskId).map((job) => (
                     <div
                       key={job.id}
                       className={`rounded border p-3 ${getJobCardClasses(job.status)}`}
@@ -924,7 +933,7 @@ export default function StandaloneDocProcessor() {
                           )}
                         </div>
                       </div>
-                      {job.log.length > 0 && (
+                      {job.log.length > 0 && (job.status === "processing" || job.status === "error") && (
                         <div className="mt-2 max-h-32 overflow-y-auto rounded border border-gray-200 bg-white/60 p-1.5 font-mono text-[11px] text-gray-700">
                           {job.log.map((line, i) => (
                             <div key={i}>{line}</div>
@@ -939,6 +948,9 @@ export default function StandaloneDocProcessor() {
 
             <section className="rounded border border-gray-200 bg-white p-4">
               <h3 className="text-sm font-semibold text-gray-900">Processed Docs</h3>
+              {isSelectedTaskProcessing && (
+                <p className="mt-1 text-[11px] text-amber-600">Task is processing — docs are read-only.</p>
+              )}
               {taskLoading ? (
                 <p className="mt-2 text-xs text-gray-500">Loading docs...</p>
               ) : taskDocs.length === 0 ? (
@@ -967,13 +979,15 @@ export default function StandaloneDocProcessor() {
                           <td className="border border-gray-200 px-2 py-1 space-x-2">
                             <button
                               onClick={() => openDoc(doc)}
-                              className="rounded border border-ni-300 px-2 py-1 text-ni-700"
+                              disabled={isSelectedTaskProcessing}
+                              className="rounded border border-ni-300 px-2 py-1 text-ni-700 disabled:opacity-40 disabled:cursor-not-allowed"
                             >
-                              View / Edit
+                              {isSelectedTaskProcessing ? "View" : "View / Edit"}
                             </button>
                             <button
                               onClick={() => handleDeleteDoc(doc)}
-                              className="rounded border border-red-300 px-2 py-1 text-red-700"
+                              disabled={isSelectedTaskProcessing}
+                              className="rounded border border-red-300 px-2 py-1 text-red-700 disabled:opacity-40 disabled:cursor-not-allowed"
                             >
                               Delete
                             </button>
