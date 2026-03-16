@@ -389,7 +389,6 @@ export default function StandaloneDocProcessor() {
         abortController: null,
       },
     ]);
-    setRows([]);
   }
 
   async function runJob(job: ProcessJob) {
@@ -403,12 +402,17 @@ export default function StandaloneDocProcessor() {
       ),
     );
 
+    let hasErrorEvent = false;
+
     try {
       await processStandaloneTaskFiles(
         job.taskId,
         job.files,
         job.configs,
         (event: StandaloneProcessEvent) => {
+          if (event.type === "error") {
+            hasErrorEvent = true;
+          }
           setJobQueue((prev) =>
             prev.map((j) => {
               if (j.id !== job.id) return j;
@@ -449,6 +453,10 @@ export default function StandaloneDocProcessor() {
             : j,
         ),
       );
+
+      if (!hasErrorEvent) {
+        setRows([]);
+      }
     } catch (err) {
       if (controller.signal.aborted) {
         setJobQueue((prev) =>
@@ -742,6 +750,7 @@ export default function StandaloneDocProcessor() {
                               value={row.docName}
                               onChange={(e) => updateRow(i, { docName: e.target.value, docNameEdited: true })}
                               placeholder="doc_name"
+                              disabled={isSelectedTaskProcessing}
                             />
                             {duplicateDocNames.has(row.docName.trim().toLowerCase()) && (
                               <p className="text-[10px] text-red-600 mt-0.5">Duplicate name</p>
@@ -759,6 +768,7 @@ export default function StandaloneDocProcessor() {
                                   customSubtype: val === "custom" ? row.customSubtype : "",
                                 });
                               }}
+                              disabled={isSelectedTaskProcessing}
                             >
                               <option value="user_manual">user_manual</option>
                               <option value="specifications">specifications</option>
@@ -767,20 +777,22 @@ export default function StandaloneDocProcessor() {
                             </select>
                             {row.subtype === "custom" && (
                               <input
-                                className="mt-1 w-full rounded border border-gray-300 px-2 py-1"
+                                className="mt-1 w-full rounded border border-gray-300 px-2 py-1 disabled:bg-gray-100 disabled:text-gray-500"
                                 value={row.customSubtype}
                                 onChange={(e) => updateRow(i, { customSubtype: e.target.value })}
                                 placeholder="custom type name"
+                                disabled={isSelectedTaskProcessing}
                               />
                             )}
                           </td>
                           <td className="border border-gray-200 px-2 py-1">
                             {(row.subtype === "custom" ? row.customSubtype.trim() : row.subtype) !== "programming_api" ? (
                               <input
-                                className="w-full rounded border border-gray-300 px-2 py-1"
+                                className="w-full rounded border border-gray-300 px-2 py-1 disabled:bg-gray-100 disabled:text-gray-500"
                                 value={row.device}
                                 onChange={(e) => updateRow(i, { device: e.target.value })}
                                 placeholder="e.g. pxie_4135"
+                                disabled={isSelectedTaskProcessing}
                               />
                             ) : (
                               <span className="text-gray-400">N/A</span>
@@ -789,12 +801,13 @@ export default function StandaloneDocProcessor() {
                           <td className="border border-gray-200 px-2 py-1">
                             {(row.subtype === "custom" ? row.customSubtype.trim() : row.subtype) === "programming_api" ? (
                               <input
-                                className="w-full rounded border border-gray-300 px-2 py-1"
+                                className="w-full rounded border border-gray-300 px-2 py-1 disabled:bg-gray-100 disabled:text-gray-500"
                                 value={row.language}
                                 onChange={(e) =>
                                   updateRow(i, { language: e.target.value })
                                 }
                                 placeholder="e.g. c, python, c#"
+                                disabled={isSelectedTaskProcessing}
                               />
                             ) : (
                               <span className="text-gray-400">N/A</span>
@@ -804,11 +817,12 @@ export default function StandaloneDocProcessor() {
                             {(row.subtype === "custom" ? row.customSubtype.trim() : row.subtype) === "programming_api" ? (
                               <div className="flex items-center gap-1">
                                 <select
-                                  className="rounded border border-gray-300 px-2 py-1"
+                                  className="rounded border border-gray-300 px-2 py-1 disabled:bg-gray-100 disabled:text-gray-500"
                                   value={row.split_mode}
                                   onChange={(e) =>
                                     updateRow(i, { split_mode: e.target.value as UploadRow["split_mode"] })
                                   }
+                                  disabled={isSelectedTaskProcessing}
                                 >
                                   <option value="headers">headers</option>
                                   <option value="full">full</option>
@@ -827,7 +841,8 @@ export default function StandaloneDocProcessor() {
                                 type="checkbox"
                                 checked={!row.skip_llm}
                                 onChange={(e) => updateRow(i, { skip_llm: !e.target.checked })}
-                                className="h-3.5 w-3.5 rounded border-gray-300"
+                                className="h-3.5 w-3.5 rounded border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                                disabled={isSelectedTaskProcessing}
                               />
                               <span className="text-[10px] text-gray-600">{row.skip_llm ? "Off" : "On"}</span>
                             </label>
@@ -835,8 +850,9 @@ export default function StandaloneDocProcessor() {
                           <td className="border border-gray-200 px-2 py-1">
                             <button
                               onClick={() => removeRow(i)}
-                              className="text-red-500 hover:text-red-700 text-xs"
+                              className="text-red-500 hover:text-red-700 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
                               title="Remove file"
+                              disabled={isSelectedTaskProcessing}
                             >
                               ✕
                             </button>
@@ -863,7 +879,7 @@ export default function StandaloneDocProcessor() {
                 )}
                 <button
                   onClick={() => setRows([])}
-                  disabled={rows.length === 0}
+                  disabled={rows.length === 0 || isSelectedTaskProcessing}
                   className="rounded border border-gray-300 px-3 py-2 text-xs text-gray-700 disabled:opacity-60"
                 >
                   Clear Selection
