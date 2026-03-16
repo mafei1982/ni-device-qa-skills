@@ -13,6 +13,7 @@ import {
   processStandaloneTaskFiles,
   updateStandaloneDocContent,
   updateStandaloneDocMeta,
+  updateStandaloneSkillMd,
   type StandaloneDocRecord,
   type StandaloneProcessConfig,
   type StandaloneProcessEvent,
@@ -81,9 +82,18 @@ export default function StandaloneDocProcessor() {
   const [docSaving, setDocSaving] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
+  const [skillModalOpen, setSkillModalOpen] = useState(false);
+  const [skillEditContent, setSkillEditContent] = useState("");
+  const [skillSaving, setSkillSaving] = useState(false);
+  const [skillModalError, setSkillModalError] = useState<string | null>(null);
+
   const editorRef = useRef<HTMLTextAreaElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
   const syncingRef = useRef<"editor" | "preview" | null>(null);
+
+  const skillEditorRef = useRef<HTMLTextAreaElement>(null);
+  const skillPreviewRef = useRef<HTMLDivElement>(null);
+  const skillSyncingRef = useRef<"editor" | "preview" | null>(null);
 
   const handleEditorScroll = useCallback(() => {
     if (syncingRef.current === "preview") return;
@@ -107,6 +117,30 @@ export default function StandaloneDocProcessor() {
       editor.scrollTop = ratio * (editor.scrollHeight - editor.clientHeight || 1);
     }
     requestAnimationFrame(() => { syncingRef.current = null; });
+  }, []);
+
+  const handleSkillEditorScroll = useCallback(() => {
+    if (skillSyncingRef.current === "preview") return;
+    skillSyncingRef.current = "editor";
+    const editor = skillEditorRef.current;
+    const preview = skillPreviewRef.current;
+    if (editor && preview) {
+      const ratio = editor.scrollTop / (editor.scrollHeight - editor.clientHeight || 1);
+      preview.scrollTop = ratio * (preview.scrollHeight - preview.clientHeight || 1);
+    }
+    requestAnimationFrame(() => { skillSyncingRef.current = null; });
+  }, []);
+
+  const handleSkillPreviewScroll = useCallback(() => {
+    if (skillSyncingRef.current === "editor") return;
+    skillSyncingRef.current = "preview";
+    const editor = skillEditorRef.current;
+    const preview = skillPreviewRef.current;
+    if (editor && preview) {
+      const ratio = preview.scrollTop / (preview.scrollHeight - preview.clientHeight || 1);
+      editor.scrollTop = ratio * (editor.scrollHeight - editor.clientHeight || 1);
+    }
+    requestAnimationFrame(() => { skillSyncingRef.current = null; });
   }, []);
 
   const selectedTask = useMemo(
@@ -695,12 +729,23 @@ export default function StandaloneDocProcessor() {
             </section>
 
             <section className="rounded border border-gray-200 bg-white p-4">
-              <h3 className="text-sm font-semibold text-gray-900">Generated SKILL.md</h3>
-              <textarea
-                className="mt-2 h-56 w-full rounded border border-gray-300 p-2 font-mono text-xs"
-                readOnly
-                value={taskSkillMd}
-              />
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-gray-900">Generated SKILL.md</h3>
+                <button
+                  onClick={() => {
+                    setSkillEditContent(taskSkillMd);
+                    setSkillModalError(null);
+                    setSkillModalOpen(true);
+                  }}
+                  disabled={!taskSkillMd}
+                  className="rounded border border-ni-300 px-3 py-1.5 text-xs font-medium text-ni-700 disabled:opacity-60"
+                >
+                  View / Edit
+                </button>
+              </div>
+              <p className="mt-2 text-xs text-gray-500">
+                {taskSkillMd ? `${taskSkillMd.length} characters` : "No SKILL.md generated yet."}
+              </p>
             </section>
           </>
         )}
@@ -806,6 +851,67 @@ export default function StandaloneDocProcessor() {
               </div>
             </div>
           )}
+        </Modal>
+      )}
+
+      {skillModalOpen && (
+        <Modal title="Edit SKILL.md" onClose={() => setSkillModalOpen(false)} wide>
+          <div className="space-y-3">
+            {skillModalError && <p className="text-sm text-red-600">{skillModalError}</p>}
+
+            <div className="flex gap-3 min-h-0" style={{ height: "60vh" }}>
+              <div className="flex-1 flex flex-col min-w-0">
+                <p className="text-xs font-semibold text-gray-700 mb-1">Editor</p>
+                <textarea
+                  ref={skillEditorRef}
+                  className="flex-1 w-full rounded border border-gray-300 p-2 font-mono text-xs resize-none"
+                  value={skillEditContent}
+                  onChange={(e) => setSkillEditContent(e.target.value)}
+                  onScroll={handleSkillEditorScroll}
+                />
+              </div>
+              <div className="flex-1 flex flex-col min-w-0">
+                <p className="text-xs font-semibold text-gray-700 mb-1">Preview</p>
+                <div
+                  ref={skillPreviewRef}
+                  className="flex-1 overflow-y-auto rounded border border-gray-200 bg-gray-50 p-3 prose prose-sm max-w-none"
+                  onScroll={handleSkillPreviewScroll}
+                >
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {skillEditContent}
+                  </ReactMarkdown>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={async () => {
+                  setSkillSaving(true);
+                  setSkillModalError(null);
+                  try {
+                    await updateStandaloneSkillMd(selectedTaskId, skillEditContent);
+                    setTaskSkillMd(skillEditContent);
+                    setSkillModalOpen(false);
+                  } catch (err) {
+                    setSkillModalError(err instanceof Error ? err.message : "Failed to save SKILL.md.");
+                  } finally {
+                    setSkillSaving(false);
+                  }
+                }}
+                disabled={skillSaving}
+                className="rounded bg-ni-600 px-3 py-2 text-xs font-medium text-white disabled:opacity-60"
+              >
+                {skillSaving ? "Saving..." : "Save"}
+              </button>
+              <button
+                onClick={() => setSkillModalOpen(false)}
+                className="rounded border border-gray-300 px-3 py-2 text-xs text-gray-700"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
         </Modal>
       )}
     </div>

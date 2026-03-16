@@ -562,6 +562,17 @@ export async function getStandaloneSkillMd(
   return res.data;
 }
 
+export async function updateStandaloneSkillMd(
+  taskId: string,
+  content: string,
+): Promise<{ updated: boolean }> {
+  const res = await axios.put<{ updated: boolean }>(
+    `${BASE_URL}/api/standalone/tasks/${encodeURIComponent(taskId)}/skill`,
+    { content },
+  );
+  return res.data;
+}
+
 export function getStandaloneTaskImageUrl(taskId: string, imageName: string): string {
   return `${BASE_URL}/api/standalone/tasks/${encodeURIComponent(taskId)}/images/${encodeURIComponent(imageName)}`;
 }

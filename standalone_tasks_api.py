@@ -68,7 +68,8 @@ When you receive a user question:
    - **Specifications** — electrical data, timing specs, operating ranges, accuracy, resolution, environmental limits
    - **User Manual** — setup, wiring, programming, configuration, troubleshooting, safety, installation
    - **Programming API** — programming interface reference, function/method signatures, API parameters, return values, code examples, driver API details
-   - **Multiple** — comparison questions or questions spanning specs, usage, and/or API
+   - **Custom** - questions that don't fit the above categories, but match a specific subtype in the doc registry (from its description or explicitly tagged subtype). For example, a question about "IPA (Internal Product Announcements)" might match a custom subtype "IPA" or a doc description mentioning "IPA (Internal Product Announcements)", and if such a doc exists in the registry, it will be used to answer the question.
+   - **Multiple** — comparison questions or questions spanning specs, usage, API and/or custom
 
 4. **Handle Missing Devices (Feature Inquiries)**: If the user does not mention a specific device but asks about a specific feature, concept, or test method (e.g., "Sequence Step Delta Time"):
    - Attempt to identify the **category** the feature belongs to (e.g., dcpower, scopes, dmm) based on the context of the question.
@@ -130,6 +131,73 @@ When you receive a user question:
 1. After answering, offer to help with related questions about the same or different devices.
 2. If the user asks about a different device or a different aspect, loop back to Step 1.
 3. If the user asks a comparison question across multiple devices, load all relevant doc skills and present a structured comparison.
+
+---
+
+## **Response Structure & Formatting Rules**: You MUST strictly follow this exact markdown structure for EVERY response. Do not deviate. Use horizontal rules (`---`) to separate every section.
+
+   1. **Direct Answer / Introduction:**
+
+    * Start with a brief, direct answer to the user's question in 2-3 sentences.
+
+    ---
+
+   2.  **### [Topic] Overview:**
+
+    * Provide 2-3 bullet points explaining the core concept or feature.
+
+    
+
+    ---
+
+   3.  **### Example Flow / Implementation:**
+
+    * Provide a logical sequence of steps.
+
+    * Whenever possible, use a Markdown Table to show workflows, parameter setups, or Key VI/API Functions (e.g., `| Step | Action |` or `| VI Name | Purpose |`).
+
+   4.  **### Visual Reference:**
+
+    * Assess if a diagram would help the user understand the concept (e.g., hardware connections, sequence timing diagrams, state machines). And the pic could be found in doc skill md file.
+
+    * If useful, insert a diagram using the same image url ref from the doc skill
+
+    * Briefly explain what the visual represents.
+
+    
+
+    ---
+
+
+   5.  **### Official Documentation & More Examples:**
+
+    * Provide 2-3 bulleted, realistic links to NI official documentation (e.g., NI-DCPower User Manual) or reference the NI Example Finder path (e.g., *Hardware Input and Output > Modular Instruments > NI-DCPower*).
+
+    
+
+    ---
+
+   6.  **### Common Pitfalls / Key Points:**
+
+    * Provide 2-3 bullet points highlighting hardware limitations, common programming mistakes, or crucial constraints (e.g., "Make sure the source delay array matches the number of steps").
+
+    
+
+    ---
+
+   7.  **Interactive Closing:**
+
+    * End with a single, highly specific follow-up question offering further assistance. (e.g., "Would you like a LabVIEW block diagram snippet for this, or do you want to discuss [Related Topic]?"). Do not use a generic "How can I help you further?".
+
+
+
+   8. **Technical Constraints:**
+
+   * Always use correct NI terminology (e.g., SMU, Session, Source Delay, Sequence Mode, VIs).
+
+   * Assume LabVIEW is the primary environment unless the user specifies Python, C#, or C/C++.
+
+   * Never make up fake NI VI names; use actual NI-DCPower API function names.
 
 ---
 
@@ -971,6 +1039,17 @@ async def get_task_skill_md(task_id: str):
         raise HTTPException(status_code=404, detail="SKILL.md not found.")
     return {"content": path.read_text(encoding="utf-8")}
 
+
+class _SkillMdUpdatePayload(BaseModel):
+    content: str
+
+
+@router.put("/tasks/{task_id}/skill")
+async def update_task_skill_md(task_id: str, payload: _SkillMdUpdatePayload):
+    _load_manifest(task_id)  # validates task exists
+    path = _skill_path(task_id)
+    path.write_text(payload.content, encoding="utf-8")
+    return {"updated": True}
 
 
 @router.get("/tasks/{task_id}/download")
